@@ -52,8 +52,12 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     public ImageDetector(@NonNull Context context) {
         super(context);
         setupCameraSource();
-        tensorFlowInterface = createTensor(context.getAssets(), modelName);
-        OpenCVLoader.initDebug(context());
+        try {
+            tensorFlowInterface = createTensor(context.getAssets(), modelName);
+            OpenCVLoader.initDebug(context());
+        } catch (Exception e) {
+            Log.e(tag, "AP: Failed to initialize tensorFlow or openCV:",e);
+        }
     }
 
     /**
