@@ -1,6 +1,7 @@
 [![GitHub license](https://img.shields.io/github/license/telenordigital/awesome-possum.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
-#Awesome Possum
+Awesome Possum
+====================
 
 This library is a complete identification and authentication neural network implementation. The 
 project is split into three parts:
