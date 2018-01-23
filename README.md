@@ -14,7 +14,7 @@ soon be split into three different repos used in combination.
 
 A link to the specific parts of the repo can be found here:
 
-[PossumCore](tree/master/core)
+[PossumCore](core)
 
 [PossumAuth](possumauth/README.md)
 
