@@ -16,6 +16,6 @@ A link to the specific parts of the repo can be found here:
 
 [PossumCore](core)
 
-[PossumAuth](possumauth/README.md)
+[PossumAuth](possumauth)
 
-[PossumGather](possumgather/README.md)
+[PossumGather](possumgather)
