@@ -8,6 +8,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
+import android.os.Handler;
 import android.os.Looper;
 
 import com.google.gson.JsonArray;
@@ -51,6 +52,8 @@ public class LocationDetectorTest {
     private Context mockedContext;
     @Mock
     private LocationManager mockedLocationManager;
+    @Mock
+    private Handler mockedHandler;
 
     private ShadowLocationManager shadowLocationManager;
     private LocationDetector locationDetector;
@@ -71,6 +74,10 @@ public class LocationDetectorTest {
             @Override
             public void detectorStatusChanged() {
                 statusChangedCounter++;
+            }
+            @Override
+            protected Handler getHandler() {
+                return mockedHandler;
             }
         };
     }
@@ -164,7 +171,8 @@ public class LocationDetectorTest {
     @Test
     public void testOnLocationChanged() throws Exception {
         long timestamp = System.currentTimeMillis();
-        Location location = fakeLocation(LocationManager.GPS_PROVIDER, 10, 60, timestamp);
+        long positionTimestamp = timestamp - 1000;
+        Location location = fakeLocation(LocationManager.GPS_PROVIDER, 10, 60, positionTimestamp);
         location.setAltitude(15);
         location.setAccuracy(16);
         shadowLocationManager.setLastKnownLocation(LocationManager.GPS_PROVIDER, location);
@@ -176,12 +184,13 @@ public class LocationDetectorTest {
         data = (Map<String, List<JsonArray>>) dataStoredField.get(locationDetector);
         Assert.assertEquals(1, data.get("default").size());
         JsonArray obj = data.get("default").get(0);
-        Assert.assertEquals(timestamp, obj.get(0).getAsLong());
-        Assert.assertEquals(10, obj.get(1).getAsFloat(), 0);
-        Assert.assertEquals(60, obj.get(2).getAsFloat(), 0);
-        Assert.assertEquals(15, obj.get(3).getAsFloat(), 0);
-        Assert.assertEquals(16, obj.get(4).getAsFloat(), 0);
-        Assert.assertEquals(LocationManager.GPS_PROVIDER, obj.get(5).getAsString());
+        Assert.assertTrue(timestamp <= obj.get(0).getAsLong());
+        Assert.assertEquals(positionTimestamp, obj.get(1).getAsLong());
+        Assert.assertEquals(10, obj.get(2).getAsFloat(), 0);
+        Assert.assertEquals(60, obj.get(3).getAsFloat(), 0);
+        Assert.assertEquals(15, obj.get(4).getAsFloat(), 0);
+        Assert.assertEquals(16, obj.get(5).getAsFloat(), 0);
+        Assert.assertEquals(LocationManager.GPS_PROVIDER, obj.get(6).getAsString());
     }
 
     @Test
@@ -279,7 +288,7 @@ public class LocationDetectorTest {
         dataStored = (Map<String, List<JsonArray>>)dataStoredField.get(locationDetector);
         Assert.assertTrue(dataStored.get("default").size() == 1);
         JsonArray data = dataStored.get("default").get(0);
-        Assert.assertEquals(timestamp, data.get(0).getAsLong());
+        Assert.assertTrue(timestamp <= data.get(0).getAsLong());
     }
 
     @Test

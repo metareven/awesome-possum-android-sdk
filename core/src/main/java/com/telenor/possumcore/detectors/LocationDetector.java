@@ -8,6 +8,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 
@@ -20,10 +21,13 @@ import com.telenor.possumcore.constants.DetectorType;
  */
 public class LocationDetector extends AbstractReceiverDetector implements LocationListener {
     private LocationManager locationManager;
+    private Handler locationHandler;
+    private static final long maxScanTime = 60*1000;
 
     public LocationDetector(@NonNull Context context) {
         super(context, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
         locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        locationHandler = getHandler();
     }
 
     /**
@@ -58,6 +62,9 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
         return isPermitted() && locationManager != null && locationManager.isProviderEnabled(provider);
     }
 
+    protected Handler getHandler() {
+        return new Handler(Looper.getMainLooper());
+    }
     /**
      * Ensures no updates are running, removing them if it is already being used. This can cause
      * a problem for authentication when the low timespan of auth can cause a lot of attempts to
@@ -66,6 +73,7 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
     @Override
     public void terminate() {
         super.terminate();
+        locationHandler.removeCallbacks(this);
         locationManager.removeUpdates(this);
     }
 
@@ -77,7 +85,8 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
         // Only scan if enabled and available, a last location is missing or the lastLocation is at least 10 minutes since
         if (isEnabled() && isAvailable()) {
             Location lastLocation = lastLocation();
-            if (lastLocation == null || lastLocation.getTime() < (now() - 10 * 60 * 1000)) { //
+            if (lastLocation == null || lastLocation.getTime() < (now() - 10 * 60 * 1000)) {
+                locationHandler.postDelayed(this::terminate, maxScanTime);
                 if (isProviderAvailable(LocationManager.GPS_PROVIDER))
                     requestProviderPosition(LocationManager.GPS_PROVIDER);
                 if (isProviderAvailable(LocationManager.NETWORK_PROVIDER))
@@ -130,6 +139,7 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
     public void onLocationChanged(Location location) {
         if (location == null) return;
         JsonArray array = new JsonArray();
+        array.add("" + now());
         array.add("" + location.getTime());
         array.add("" + location.getLatitude());
         array.add("" + location.getLongitude());

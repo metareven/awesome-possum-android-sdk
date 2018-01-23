@@ -18,9 +18,9 @@ android {
         targetSdkVersion 26
         versionCode VERSION_CODE
         versionName VERSION_NAME
-        ndk {
-            abiFilters "x86", "x86_64", "armeabi-v7a", "armeabi", "mips"
-        }
+//        ndk {
+//            abiFilters "x86", "x86_64", "armeabi-v7a", "armeabi", "mips"
+//        }
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
