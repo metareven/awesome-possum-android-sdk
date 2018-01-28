@@ -1,4 +1,4 @@
-package com.telenor.possumgather.services;
+package com.telenor.possumgather.upload;
 
 import android.content.Context;
 import android.os.AsyncTask;

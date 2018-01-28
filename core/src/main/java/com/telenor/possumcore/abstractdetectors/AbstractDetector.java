@@ -25,7 +25,7 @@ import java.util.Map;
 public abstract class AbstractDetector implements Runnable {
     private Context context;
     private String uniqueUserId;
-    private Map<String, List<JsonArray>> dataStored = new HashMap<>();
+    protected Map<String, List<JsonArray>> dataStored = new HashMap<>();
     protected static final String tag = AbstractDetector.class.getName();
     protected static final String defaultSet = "default";
 

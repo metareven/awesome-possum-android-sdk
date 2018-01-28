@@ -2,7 +2,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.telenor.possumgather"
     tools:node="merge">
+
     <application>
-        <service android:name=".services.AmazonUploadService" />
+        <service
+            android:name=".upload.AmazonUploadService"
+            android:exported="false"/>
+        <service
+            android:name="com.amazonaws.mobileconnectors.s3.transferutility.TransferService"
+            android:enabled="true" />
     </application>
 </manifest>

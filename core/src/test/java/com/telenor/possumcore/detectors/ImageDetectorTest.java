@@ -4,6 +4,8 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.hardware.Camera;
+import android.hardware.camera2.CameraManager;
 
 import com.telenor.possumcore.BuildConfig;
 import com.telenor.possumcore.TestUtils;
@@ -19,7 +21,11 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowApplication;
+import org.robolectric.shadows.ShadowCamera;
+import org.robolectric.shadows.ShadowPackageManager;
 
 import java.lang.reflect.Field;
 
@@ -27,26 +33,46 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@Config(constants = BuildConfig.class, abiSplit = "aarch64")
+@Config(constants = BuildConfig.class) //, abiSplit = "aarch64"
 @RunWith(RobolectricTestRunner.class)
 public class ImageDetectorTest {
     @Mock
     private Context mockedContext;
     @Mock
     private TensorWeights mockedTensor;
+    @Mock
+    private CameraManager mockedCameraManager;
 
     private ImageDetector imageDetector;
+    private int counter;
+    private ShadowCamera frontCameraShadow;
+    private ShadowCamera backCameraShadow;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         TestUtils.initializeJodaTime();
+        counter = 0;
+        ShadowPackageManager shadowPackageManager = Shadows.shadowOf(RuntimeEnvironment.application.getPackageManager());
+        shadowPackageManager.setSystemFeature(PackageManager.FEATURE_CAMERA_FRONT, true);
+        shadowPackageManager.setSystemFeature(PackageManager.FEATURE_CAMERA, true);
+        ShadowApplication.getInstance().grantPermissions(Manifest.permission.CAMERA);
 //        Assert.fail("Architecture:"+System.getProperty("os.arch"));
         when(mockedContext.checkPermission(eq(Manifest.permission.CAMERA), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         imageDetector = new ImageDetector(RuntimeEnvironment.application) {
             @Override
+            protected CameraManager cameraManager(Context context) {
+               return mockedCameraManager;
+            }
+            @Override
             protected TensorWeights createTensor(AssetManager assetManager, String modelName) {
                 return mockedTensor;
+            }
+            @Override
+            protected void initializeOpenCV() {
+                // To avoid dealing with static library loading in robolectric, openCV is removed
+                // from initialization of detector
+                counter++;
             }
         };
     }
@@ -59,12 +85,41 @@ public class ImageDetectorTest {
     @Test
     public void testInitialize() throws Exception {
         Assert.assertNotNull(imageDetector);
+        Assert.assertEquals(1, counter); // Confirms openCV is initialized
         Assert.assertEquals("image", imageDetector.detectorName());
         Assert.assertEquals(DetectorType.Image, imageDetector.detectorType());
         Assert.assertEquals(Manifest.permission.CAMERA, imageDetector.requiredPermission());
         Field cameraSourceField = ImageDetector.class.getDeclaredField("cameraSource");
         cameraSourceField.setAccessible(true);
         Assert.assertNotNull(cameraSourceField.get(imageDetector));
+    }
+
+    @Test
+    public void testEnabled() throws Exception {
+        ShadowPackageManager shadowPackageManager = Shadows.shadowOf(RuntimeEnvironment.application.getPackageManager());
+        Assert.assertTrue(imageDetector.isEnabled());
+        shadowPackageManager.setSystemFeature(PackageManager.FEATURE_CAMERA_FRONT, false);
+        Assert.assertFalse(imageDetector.isEnabled());
+        shadowPackageManager.setSystemFeature(PackageManager.FEATURE_CAMERA_FRONT, true);
+        Assert.assertTrue(imageDetector.isEnabled());
+        Field tensorFlowField = ImageDetector.class.getDeclaredField("tensorFlowInterface");
+        tensorFlowField.setAccessible(true);
+        tensorFlowField.set(imageDetector, null);
+        Assert.assertFalse(imageDetector.isEnabled());
+    }
+
+    @Test
+    public void testCameraNotInUse() throws Exception {
+        Assert.assertFalse(imageDetector.isCameraUsed());
+        Field availabilityCallbackField = ImageDetector.class.getDeclaredField("availabilityCallback");
+        availabilityCallbackField.setAccessible(true);
+        CameraManager.AvailabilityCallback callback = (CameraManager.AvailabilityCallback)availabilityCallbackField.get(imageDetector);
+        callback.onCameraUnavailable(""+Camera.CameraInfo.CAMERA_FACING_FRONT);
+        Assert.assertTrue(imageDetector.isCameraUsed());
+        callback.onCameraAvailable(""+Camera.CameraInfo.CAMERA_FACING_FRONT);
+        Assert.assertFalse(imageDetector.isCameraUsed());
+        callback.onCameraUnavailable(""+Camera.CameraInfo.CAMERA_FACING_BACK);
+        Assert.assertFalse(imageDetector.isCameraUsed());
     }
 
 /*    @Test

@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+if (properties.getProperty("authentication_url") == null)
+    throw new GradleException("Missing property 'authentication_url' from local.properties")
+
 android {
     compileSdkVersion 26
     defaultConfig {
@@ -13,7 +19,7 @@ android {
         }
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
+        resValue "string", "authentication_url", properties["authentication_url"]
     }
 
     buildTypes {

@@ -2,6 +2,7 @@ package com.telenor.possumcore.detectors;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,7 +12,14 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.YuvImage;
+import android.hardware.Camera;
+import android.hardware.camera2.CameraManager;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
+import android.support.annotation.RequiresPermission;
 import android.util.Log;
 
 import com.google.android.gms.vision.CameraSource;
@@ -41,7 +49,10 @@ import static org.opencv.imgproc.Imgproc.warpAffine;
 public class ImageDetector extends AbstractDetector implements IFaceFound {
     private static TensorWeights tensorFlowInterface;
     private static FaceDetector detector; // To prevent changes during configChanges it is static
+    private CameraManager cameraManager;
     private CameraSource cameraSource;
+    private boolean isCameraUsed;
+    private CameraManager.AvailabilityCallback availabilityCallback;
     private static final int PREVIEW_WIDTH = 640;
     private static final int PREVIEW_HEIGHT = 480;
     private static final int OUTPUT_BMP_WIDTH = 96;
@@ -52,14 +63,48 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     public ImageDetector(@NonNull Context context) {
         super(context);
         setupCameraSource();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            setupCameraManager(context);
+        }
         try {
             tensorFlowInterface = createTensor(context.getAssets(), modelName);
-            OpenCVLoader.initDebug(context());
+            initializeOpenCV();
         } catch (Exception e) {
             Log.e(tag, "AP: Failed to initialize tensorFlow or openCV:",e);
         }
     }
 
+    @RequiresApi(api=Build.VERSION_CODES.LOLLIPOP)
+    private void setupCameraManager(@NonNull Context context) {
+        cameraManager = cameraManager(context);
+        availabilityCallback = new CameraManager.AvailabilityCallback() {
+            @Override
+            public void onCameraAvailable(@NonNull String cameraId) {
+                Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+                Camera.getCameraInfo(Integer.parseInt(cameraId), cameraInfo);
+                if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                    Log.i(tag, "AP: Camera is available:"+cameraId);
+                    isCameraUsed = false;
+                }
+            }
+
+            @Override
+            public void onCameraUnavailable(@NonNull String cameraId) {
+                Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+                Camera.getCameraInfo(Integer.parseInt(cameraId), cameraInfo);
+                if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                    Log.i(tag, "AP: Camera is unAvailable:"+cameraId);
+                    isCameraUsed = true;
+                }
+            }
+        };
+        cameraManager.registerAvailabilityCallback(availabilityCallback, new Handler(Looper.getMainLooper()));
+    }
+
+    @RequiresApi(api=Build.VERSION_CODES.LOLLIPOP)
+    protected CameraManager cameraManager(Context context) {
+        return (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+    }
     /**
      * The face detector is the actual detector finding the face in a video stream. It handles
      * setting up google vision, setting the custom face detector to report faces in the interface
@@ -80,6 +125,13 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         } else {
             Log.i(tag, "Attempt to recreate but it was already there...");
         }
+    }
+
+    /**
+     * Separate method to handle openCV in order to ease testing
+     */
+    protected void initializeOpenCV() {
+        OpenCVLoader.initDebug(context());
     }
 
     /**
@@ -108,16 +160,41 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     }
 
     @SuppressWarnings("MissingPermission")
+    @RequiresPermission(Manifest.permission.CAMERA)
     @Override
     public void run() {
-        if (isEnabled() && isAvailable()) {
+        if (isEnabled() && isAvailable() && !isCameraUsed()) {
             isProcessingFace = false;
             Log.i(tag, "FirstTest: Starting camera for image");
             try {
                 cameraSource.start();
+            } catch (RuntimeException e) {
+               Log.i(tag, "AP: Camera is in use, old school:",e);
             } catch (IOException e) {
-                Log.i(tag, "IO:", e);
+                Log.i(tag, "AP: IO:", e);
             }
+        }
+    }
+
+    /**
+     * An external and internal way to check whether camera is in use or not
+     *
+     * @return true if camera is used, false if not
+     */
+    public boolean isCameraUsed() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            return isCameraUsed;
+        } else {
+            Camera camera = null;
+            try {
+                camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT);
+            } catch (RuntimeException e) {
+                Log.i(tag, "AP: Camera already open:",e);
+                return true;
+            } finally {
+                if (camera != null) camera.release();
+            }
+            return false;
         }
     }
 
@@ -131,12 +208,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
 
     @Override
     public boolean isEnabled() {
-        return super.isEnabled() && tensorFlowInterface != null;
-    }
-
-    @Override
-    public boolean isAvailable() {
-        return super.isAvailable();
+        return tensorFlowInterface != null && context().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT);
     }
 
     @Override
@@ -265,6 +337,14 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         super.cleanUp();
         if (detector != null) {
             detector.destroy();
+            detector = null;
+        }
+        if (cameraSource != null) {
+            cameraSource.release();
+            cameraSource = null;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            cameraManager.unregisterAvailabilityCallback(availabilityCallback);
         }
     }
 

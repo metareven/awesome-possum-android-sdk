@@ -1,25 +1,31 @@
 package com.telenor.possumauth.example;
 
 import android.content.res.Configuration;
+import android.hardware.Camera;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.SurfaceView;
 import android.view.View;
 
 import com.telenor.possumauth.PossumAuth;
 
+import java.io.IOException;
+
 public class MainActivity extends AppCompatActivity {
     private PossumAuth possumAuth;
+    private SurfaceView surfaceView;
+    private Camera camera;
     private static final String tag = MainActivity.class.getName();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-//        Log.i(tag, "AP: Architecture:"+System.getProperty("os.arch"));
-        possumAuth = new PossumAuth(this, "brynjeAndroid", "uploadUrl");
+        surfaceView = findViewById(R.id.camera_preview);
+        possumAuth = new PossumAuth(this, "brynjeAndroid", getString(R.string.authentication_url));
     }
 
-    public void stopProcess(View view) {
+    public void toggleProcess(View view) {
         if (possumAuth.isListening()) {
             possumAuth.stopListening();
             Log.i(tag, "AP: Stopping listening");
@@ -36,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        Log.i(tag, "AP:Config changed");
+        Log.i(tag, "AP: Config changed");
         possumAuth.onConfigurationChanged(newConfig);
     }
 
@@ -50,5 +56,22 @@ public class MainActivity extends AppCompatActivity {
     public void onPause() {
         super.onPause();
         possumAuth.onPause();
+    }
+
+    public void toggleCam(View view) {
+        if (camera == null) {
+            camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT);
+            try {
+                camera.setPreviewDisplay(surfaceView.getHolder());
+                camera.setDisplayOrientation(90);
+                camera.startPreview();
+            } catch (IOException e) {
+                Log.i(tag, "AP: ",e);
+            }
+        } else {
+            camera.stopPreview();
+            camera.release();
+            camera = null;
+        }
     }
 }

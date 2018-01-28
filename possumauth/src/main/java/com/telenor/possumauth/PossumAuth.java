@@ -26,13 +26,13 @@ public class PossumAuth extends PossumCore {
 
     @Override
     protected void addAllDetectors(Context context) {
-        addDetector(new Accelerometer(context));
-        addDetector(new AmbientSoundDetector(context));
-        addDetector(new GyroScope(context));
-        addDetector(new NetworkDetector(context));
-        addDetector(new LocationDetector(context));
+//        addDetector(new Accelerometer(context));
+//        addDetector(new AmbientSoundDetector(context));
+//        addDetector(new GyroScope(context));
+//        addDetector(new NetworkDetector(context));
+//        addDetector(new LocationDetector(context));
         addDetector(new ImageDetector(context));
-        addDetector(new BluetoothDetector(context));
+//        addDetector(new BluetoothDetector(context));
     }
 
     @Override

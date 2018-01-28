@@ -1,4 +1,4 @@
-package com.telenor.possumgather.services;
+package com.telenor.possumgather.upload;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 
