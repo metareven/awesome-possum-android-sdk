@@ -3,6 +3,7 @@ package com.telenor.possumcore;
 import android.content.Context;
 
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
+import com.telenor.possumcore.constants.CoreStatus;
 import com.telenor.possumcore.detectors.Accelerometer;
 
 import org.junit.After;
@@ -20,6 +21,7 @@ import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Config(constants = BuildConfig.class)
 @RunWith(RobolectricTestRunner.class)
@@ -83,23 +85,23 @@ public class PossumCoreTest {
     @Test
     public void testStopListening() throws Exception {
         possumCore.startListening();
-        Field listenField = PossumCore.class.getDeclaredField("isListening");
-        listenField.setAccessible(true);
-        AtomicBoolean listen = (AtomicBoolean)listenField.get(possumCore);
-        Assert.assertTrue(listen.get());
+        Field statusField = PossumCore.class.getDeclaredField("status");
+        statusField.setAccessible(true);
+        AtomicInteger status = (AtomicInteger) statusField.get(possumCore);
+        Assert.assertEquals(CoreStatus.Running, status.get());
         possumCore.stopListening();
-        listen = (AtomicBoolean)listenField.get(possumCore);
-        Assert.assertFalse(listen.get());
+        status = (AtomicInteger) statusField.get(possumCore);
+        Assert.assertEquals(CoreStatus.Idle, status.get());
     }
 
     @Test
-    public void testIsListening() throws Exception {
-        Assert.assertFalse(possumCore.isListening());
-        Field listenField = PossumCore.class.getDeclaredField("isListening");
+    public void testIsRunning() throws Exception {
+        Assert.assertEquals(CoreStatus.Idle, possumCore.getStatus());
+        Field listenField = PossumCore.class.getDeclaredField("status");
         listenField.setAccessible(true);
-        AtomicBoolean listen = (AtomicBoolean)listenField.get(possumCore);
-        listen.set(true);
-        Assert.assertTrue(possumCore.isListening());
+        AtomicInteger listen = (AtomicInteger) listenField.get(possumCore);
+        listen.set(CoreStatus.Running);
+        Assert.assertEquals(CoreStatus.Running, possumCore.getStatus());
     }
 
     @Test

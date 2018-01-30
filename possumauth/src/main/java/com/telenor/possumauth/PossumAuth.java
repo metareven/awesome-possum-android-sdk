@@ -9,6 +9,7 @@ import com.telenor.possumcore.detectors.Accelerometer;
 import com.telenor.possumcore.detectors.AmbientSoundDetector;
 import com.telenor.possumcore.detectors.BluetoothDetector;
 import com.telenor.possumcore.detectors.GyroScope;
+import com.telenor.possumcore.detectors.HardwareDetector;
 import com.telenor.possumcore.detectors.ImageDetector;
 import com.telenor.possumcore.detectors.LocationDetector;
 import com.telenor.possumcore.detectors.NetworkDetector;
@@ -26,6 +27,8 @@ public class PossumAuth extends PossumCore {
 
     @Override
     protected void addAllDetectors(Context context) {
+        // TODO: Removed to test, add back when pushing version
+        addDetector(new HardwareDetector(context));
 //        addDetector(new Accelerometer(context));
 //        addDetector(new AmbientSoundDetector(context));
 //        addDetector(new GyroScope(context));

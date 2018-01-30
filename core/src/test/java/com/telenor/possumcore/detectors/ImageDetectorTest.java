@@ -7,6 +7,7 @@ import android.content.res.AssetManager;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraManager;
 
+import com.google.android.gms.vision.CameraSource;
 import com.telenor.possumcore.BuildConfig;
 import com.telenor.possumcore.TestUtils;
 import com.telenor.possumcore.constants.DetectorType;
@@ -18,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
@@ -31,6 +33,9 @@ import java.lang.reflect.Field;
 
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @Config(constants = BuildConfig.class) //, abiSplit = "aarch64"
@@ -42,21 +47,32 @@ public class ImageDetectorTest {
     private TensorWeights mockedTensor;
     @Mock
     private CameraManager mockedCameraManager;
+    @Mock
+    private CameraSource mockedCameraSource;
 
     private ImageDetector imageDetector;
     private int counter;
-    private ShadowCamera frontCameraShadow;
-    private ShadowCamera backCameraShadow;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         TestUtils.initializeJodaTime();
         counter = 0;
+        Camera.CameraInfo frontCamInfo = new Camera.CameraInfo();
+        frontCamInfo.facing = Camera.CameraInfo.CAMERA_FACING_FRONT;
+        frontCamInfo.orientation = 90;
+        frontCamInfo.canDisableShutterSound = true;
+        ShadowCamera.addCameraInfo(Camera.CameraInfo.CAMERA_FACING_FRONT, frontCamInfo);
+        Camera.CameraInfo backCamInfo = new Camera.CameraInfo();
+        backCamInfo.facing = Camera.CameraInfo.CAMERA_FACING_BACK;
+        backCamInfo.orientation = 90;
+        backCamInfo.canDisableShutterSound = true;
+        ShadowCamera.addCameraInfo(Camera.CameraInfo.CAMERA_FACING_BACK, backCamInfo);
         ShadowPackageManager shadowPackageManager = Shadows.shadowOf(RuntimeEnvironment.application.getPackageManager());
         shadowPackageManager.setSystemFeature(PackageManager.FEATURE_CAMERA_FRONT, true);
         shadowPackageManager.setSystemFeature(PackageManager.FEATURE_CAMERA, true);
         ShadowApplication.getInstance().grantPermissions(Manifest.permission.CAMERA);
+
 //        Assert.fail("Architecture:"+System.getProperty("os.arch"));
         when(mockedContext.checkPermission(eq(Manifest.permission.CAMERA), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         imageDetector = new ImageDetector(RuntimeEnvironment.application) {
@@ -95,6 +111,13 @@ public class ImageDetectorTest {
     }
 
     @Test
+    public void testAvailable() throws Exception {
+        Assert.assertTrue(imageDetector.isAvailable());
+        ShadowApplication.getInstance().denyPermissions(Manifest.permission.CAMERA);
+        Assert.assertFalse(imageDetector.isAvailable());
+    }
+
+    @Test
     public void testEnabled() throws Exception {
         ShadowPackageManager shadowPackageManager = Shadows.shadowOf(RuntimeEnvironment.application.getPackageManager());
         Assert.assertTrue(imageDetector.isEnabled());
@@ -120,6 +143,32 @@ public class ImageDetectorTest {
         Assert.assertFalse(imageDetector.isCameraUsed());
         callback.onCameraUnavailable(""+Camera.CameraInfo.CAMERA_FACING_BACK);
         Assert.assertFalse(imageDetector.isCameraUsed());
+    }
+
+    @Test
+    public void testRunFiresCameraSourceStart() throws Exception {
+        Field camSourceField = ImageDetector.class.getDeclaredField("cameraSource");
+        camSourceField.setAccessible(true);
+        camSourceField.set(imageDetector, mockedCameraSource);
+        verify(mockedCameraSource, never()).start();
+        imageDetector.run();
+        verify(mockedCameraSource, times(1)).start();
+    }
+
+//    @Test
+//    public void testInitializationWithTensorFlowAndOpenCV() throws Exception {
+//        imageDetector = new ImageDetector(RuntimeEnvironment.application);
+//        Assert.assertNotNull(imageDetector);
+//    }
+
+    @Test
+    public void testStopFiresCameraSourceStop() throws Exception {
+        Field camSourceField = ImageDetector.class.getDeclaredField("cameraSource");
+        camSourceField.setAccessible(true);
+        camSourceField.set(imageDetector, mockedCameraSource);
+        verify(mockedCameraSource, never()).stop();
+        imageDetector.terminate();
+        verify(mockedCameraSource, times(1)).stop();
     }
 
 /*    @Test

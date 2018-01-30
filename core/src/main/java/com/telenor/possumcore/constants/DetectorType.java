@@ -10,4 +10,5 @@ public class DetectorType {
     public static final int Position = 102;
     public static final int Image = 103;
     public static final int Audio = 104;
+    public static final int Hardware = 105;
 }

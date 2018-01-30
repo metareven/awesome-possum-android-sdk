@@ -60,13 +60,15 @@ public class MainActivity extends AppCompatActivity {
 
     public void toggleCam(View view) {
         if (camera == null) {
-            camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT);
             try {
+                camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT);
                 camera.setPreviewDisplay(surfaceView.getHolder());
                 camera.setDisplayOrientation(90);
                 camera.startPreview();
             } catch (IOException e) {
-                Log.i(tag, "AP: ",e);
+                Log.i(tag, "AP: Failed to preview camera:",e);
+            } catch (RuntimeException e) {
+                Log.i(tag, "AP: Failed to open camera");
             }
         } else {
             camera.stopPreview();

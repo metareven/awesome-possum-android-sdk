@@ -165,11 +165,8 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     public void run() {
         if (isEnabled() && isAvailable() && !isCameraUsed()) {
             isProcessingFace = false;
-            Log.i(tag, "FirstTest: Starting camera for image");
             try {
                 cameraSource.start();
-            } catch (RuntimeException e) {
-               Log.i(tag, "AP: Camera is in use, old school:",e);
             } catch (IOException e) {
                 Log.i(tag, "AP: IO:", e);
             }
@@ -185,6 +182,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             return isCameraUsed;
         } else {
+            // Faulty method, will cause app to remove presently using app
             Camera camera = null;
             try {
                 camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT);
@@ -387,11 +385,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
 
         return alignedFace;
     }
-//
-//    public void setModel(TensorFlowInferenceInterface model) {
-//        tensorFlowInterface = model;
-//        Log.i(tag, "FirstTest: tensorFlowInterface assigned");
-//    }
 
 /*    protected int[] LBPFromBitmap(Bitmap bitmap) {
         int[] vectorLBPU = new int[0];

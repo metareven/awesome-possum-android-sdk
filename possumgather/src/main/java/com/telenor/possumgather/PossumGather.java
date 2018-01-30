@@ -58,8 +58,9 @@ public class PossumGather extends PossumCore {
      */
     @Override
     protected void addAllDetectors(Context context) {
-        addDetector(new Accelerometer(context));
         // TODO: Removed rest to make it easier to test. Remember to take in again
+//        addDetector(new HardwareDetector(context));
+        addDetector(new Accelerometer(context));
 //        addDetector(new AmbientSoundDetector(context));
 //        addDetector(new GyroScope(context));
 //        addDetector(new NetworkDetector(context));

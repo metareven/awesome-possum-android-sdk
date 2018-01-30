@@ -2,6 +2,7 @@ package com.telenor.possumcore.abstractdetectors;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
