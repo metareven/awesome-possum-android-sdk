@@ -17,7 +17,8 @@ public class NetworkDetector extends AbstractReceiverDetector {
     private int wifiState = WifiManager.WIFI_STATE_DISABLED;
 
     public NetworkDetector(@NonNull Context context) {
-        super(context, new IntentFilter(WifiManager.WIFI_STATE_CHANGED_ACTION));
+        super(context);
+        addFilterAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         ConnectivityManager mng = (ConnectivityManager)context.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         if (mng != null && mng.getActiveNetworkInfo() != null && ConnectivityManager.TYPE_WIFI == mng.getActiveNetworkInfo().getType()) {

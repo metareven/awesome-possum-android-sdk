@@ -3,7 +3,7 @@ package com.telenor.possumgather;
 import android.content.Context;
 
 import com.telenor.possumcore.TestUtils;
-import com.telenor.possumgather.detectors.Accelerometer;
+import com.telenor.possumcore.detectors.Accelerometer;
 
 import org.junit.After;
 import org.junit.Assert;

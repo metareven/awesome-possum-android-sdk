@@ -73,7 +73,7 @@ public class BluetoothDetectorTest {
         MockitoAnnotations.initMocks(this);
         counter = 0;
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        shadowBluetoothAdapter = Shadows.shadowOf(bluetoothAdapter);
+        shadowBluetoothAdapter = Shadows.shadowOf(ShadowBluetoothAdapter.getDefaultAdapter());
         shadowBluetoothAdapter.enable();
         when(mockedContext.getApplicationContext()).thenReturn(mockedContext);
         when(mockedContext.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(mockedBluetoothManager);
@@ -141,15 +141,8 @@ public class BluetoothDetectorTest {
         adapterField.setAccessible(true);
         Assert.assertNotNull(adapterField.get(bluetoothDetector));
 
-        when(mockedBluetoothManager.getAdapter()).thenReturn(null);
-        bluetoothDetector = new BluetoothDetector(mockedContext);
+        adapterField.set(bluetoothDetector, null);
         Assert.assertFalse(bluetoothDetector.isEnabled());
-        Assert.assertNull(adapterField.get(bluetoothDetector));
-
-        when(mockedContext.getSystemService(eq(Context.BLUETOOTH_SERVICE))).thenReturn(null);
-        bluetoothDetector = new BluetoothDetector(mockedContext);
-        Assert.assertFalse(bluetoothDetector.isEnabled());
-        Assert.assertNull(adapterField.get(bluetoothDetector));
     }
 
     @Test
@@ -187,9 +180,12 @@ public class BluetoothDetectorTest {
     }
 
     @Test
-    public void testConnectedOnlyRun() {
+    public void testConnectedOnlyRun() throws Exception {
         when(mockedBluetoothAdapter.isEnabled()).thenReturn(true);
         bluetoothDetector = new BluetoothDetector(mockedContext);
+        Field adapterField = BluetoothDetector.class.getDeclaredField("bluetoothAdapter");
+        adapterField.setAccessible(true);
+        adapterField.set(bluetoothDetector, mockedBluetoothAdapter);
         Assert.assertTrue(bluetoothDetector.isEnabled());
         Assert.assertTrue(bluetoothDetector.isAvailable());
         verify(mockedBluetoothAdapter, never()).getProfileProxy(any(Context.class), any(BluetoothProfile.ServiceListener.class), anyInt());
@@ -212,6 +208,9 @@ public class BluetoothDetectorTest {
                 return true;
             }
         };
+        Field adapterField = BluetoothDetector.class.getDeclaredField("bluetoothAdapter");
+        adapterField.setAccessible(true);
+        adapterField.set(bluetoothDetector, mockedBluetoothAdapter);
         verify(mockedBluetoothLEScanner, never()).startScan(eq(null), any(ScanSettings.class), any(ScanCallback.class));
         Assert.assertTrue(bluetoothDetector.isEnabled());
         Assert.assertTrue(bluetoothDetector.isAvailable());
@@ -230,6 +229,10 @@ public class BluetoothDetectorTest {
                 return true;
             }
         };
+        Field adapterField = BluetoothDetector.class.getDeclaredField("bluetoothAdapter");
+        adapterField.setAccessible(true);
+        adapterField.set(bluetoothDetector, mockedBluetoothAdapter);
+
         verify(mockedBluetoothAdapter, never()).startDiscovery();
         bluetoothDetector.run();
         verify(mockedBluetoothAdapter, times(1)).startDiscovery();
@@ -247,6 +250,10 @@ public class BluetoothDetectorTest {
                 return true;
             }
         };
+        Field adapterField = BluetoothDetector.class.getDeclaredField("bluetoothAdapter");
+        adapterField.setAccessible(true);
+        adapterField.set(bluetoothDetector, mockedBluetoothAdapter);
+
         verify(mockedBluetoothAdapter, never()).startDiscovery();
         bluetoothDetector.run();
         verify(mockedBluetoothAdapter, times(1)).startDiscovery();
@@ -259,6 +266,10 @@ public class BluetoothDetectorTest {
         when(mockedBluetoothAdapter.isEnabled()).thenReturn(true);
         verify(mockedBluetoothLEScanner, never()).stopScan(any(ScanCallback.class));
         bluetoothDetector = new BluetoothDetector(mockedContext);
+        Field adapterField = BluetoothDetector.class.getDeclaredField("bluetoothAdapter");
+        adapterField.setAccessible(true);
+        adapterField.set(bluetoothDetector, mockedBluetoothAdapter);
+
         bluetoothDetector.terminate();
         verify(mockedBluetoothLEScanner, times(1)).stopScan(any(ScanCallback.class));
     }
@@ -270,6 +281,9 @@ public class BluetoothDetectorTest {
         when(mockedBluetoothAdapter.isDiscovering()).thenReturn(true);
         verify(mockedBluetoothAdapter, never()).cancelDiscovery();
         bluetoothDetector = new BluetoothDetector(mockedContext);
+        Field adapterField = BluetoothDetector.class.getDeclaredField("bluetoothAdapter");
+        adapterField.setAccessible(true);
+        adapterField.set(bluetoothDetector, mockedBluetoothAdapter);
         bluetoothDetector.terminate();
         verify(mockedBluetoothAdapter, times(1)).cancelDiscovery();
     }

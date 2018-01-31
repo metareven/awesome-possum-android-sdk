@@ -2,7 +2,6 @@ package com.telenor.possumcore.abstractdetectors;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -109,7 +108,7 @@ public abstract class AbstractDetector implements Runnable {
      *
      * @return the context the sensor supplies
      */
-    protected Context context() {
+    public Context context() {
         return context;
     }
 
@@ -181,7 +180,7 @@ public abstract class AbstractDetector implements Runnable {
      *
      * @return a unique string identifying the user
      */
-    protected String getUserId() {
+    public String getUserId() {
         return uniqueUserId;
     }
 
@@ -202,7 +201,16 @@ public abstract class AbstractDetector implements Runnable {
             return;
         }
         set.add(data);
-        Log.d(tag, "AP:" + data.toString());
+//        Log.d(tag, "AP:" + data.toString());
+    }
+
+    /**
+     * Retrieve all dataSets with all data stored
+     *
+     * @return a map with dataSet names containing jsonArrays with all the data
+     */
+    public Map<String, List<JsonArray>> dataStored() {
+        return dataStored;
     }
 
     /**

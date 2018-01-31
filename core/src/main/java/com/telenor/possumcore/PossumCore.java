@@ -193,6 +193,14 @@ public abstract class PossumCore {
     }
 
     /**
+     * Quick way to access the detectors registered from subclasses
+     *
+     * @return a set with the detectors
+     */
+    protected Set<AbstractDetector> detectors() {
+        return detectors;
+    }
+    /**
      * The present list of dangerous permissions. Can be extended and expanded if necessary.
      *
      * @return a list of used dangerous permissions

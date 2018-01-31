@@ -82,20 +82,16 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             public void onCameraAvailable(@NonNull String cameraId) {
                 Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
                 Camera.getCameraInfo(Integer.parseInt(cameraId), cameraInfo);
-                if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                    Log.i(tag, "AP: Camera is available:"+cameraId);
+                if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT)
                     isCameraUsed = false;
-                }
             }
 
             @Override
             public void onCameraUnavailable(@NonNull String cameraId) {
                 Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
                 Camera.getCameraInfo(Integer.parseInt(cameraId), cameraInfo);
-                if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                    Log.i(tag, "AP: Camera is unAvailable:"+cameraId);
+                if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT)
                     isCameraUsed = true;
-                }
             }
         };
         cameraManager.registerAvailabilityCallback(availabilityCallback, new Handler(Looper.getMainLooper()));

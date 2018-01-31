@@ -15,9 +15,9 @@ public abstract class AbstractReceiverDetector extends AbstractDetector {
     private BroadcastReceiver receiver;
     private boolean isRegistered;
     private boolean isAlwaysOn;
-    private IntentFilter intentFilter;
+    private IntentFilter intentFilter = new IntentFilter();
 
-    public AbstractReceiverDetector(@NonNull Context context, @NonNull IntentFilter intentFilter) {
+    public AbstractReceiverDetector(@NonNull Context context) {
         super(context);
         receiver = new BroadcastReceiver() {
             @Override
@@ -25,7 +25,6 @@ public abstract class AbstractReceiverDetector extends AbstractDetector {
                 onReceiveData(intent);
             }
         };
-        this.intentFilter = intentFilter;
     }
 
     protected void addFilterAction(String action) {
@@ -41,7 +40,7 @@ public abstract class AbstractReceiverDetector extends AbstractDetector {
     }
 
     private void registerReceiver() {
-        if (!isRegistered) {
+        if (!isRegistered && intentFilter.countActions() > 0) {
             context().registerReceiver(receiver, intentFilter);
             isRegistered = true;
         }

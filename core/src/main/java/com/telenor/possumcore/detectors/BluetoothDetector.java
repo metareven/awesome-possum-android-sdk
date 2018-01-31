@@ -2,7 +2,6 @@ package com.telenor.possumcore.detectors;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanRecord;
@@ -20,7 +19,6 @@ import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractReceiverDetector;
 import com.telenor.possumcore.constants.DetectorType;
 
-@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class BluetoothDetector extends AbstractReceiverDetector {
     private BluetoothAdapter bluetoothAdapter;
     private Handler handler = new Handler();
@@ -33,12 +31,11 @@ public class BluetoothDetector extends AbstractReceiverDetector {
     private ScanCallback bleScanCallback;
 
     public BluetoothDetector(@NonNull Context context) {
-        super(context, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+        super(context);
+        addFilterAction(BluetoothAdapter.ACTION_STATE_CHANGED);
         addFilterAction(BluetoothDevice.ACTION_FOUND);
         receiverIsAlwaysOn();
-        BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        if (bluetoothManager == null) return;
-        bluetoothAdapter = bluetoothManager.getAdapter();
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (bluetoothAdapter == null) return;
         createDataSet(scanDataSet); // Creates an additional dataSet, one for scanning
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -76,7 +73,11 @@ public class BluetoothDetector extends AbstractReceiverDetector {
             for (BluetoothDevice device : proxy.getDevicesMatchingConnectionStates(allStates)) {
                 JsonArray data = new JsonArray();
                 data.add("" + now()); // Timestamp
-                data.add("" + device.getType()); // BLE/classic/both
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    data.add("" + device.getType()); // BLE/classic/both
+                } else {
+                    data.add("0"); // Corresponds to BluetoothDevice.DEVICE_TYPE_UNKNOWN
+                }
                 data.add(""+device.getBluetoothClass().getDeviceClass()); // Device class
                 data.add(device.getAddress()); // mac
                 data.add("" + proxy.getConnectionState(device)); // connection state
@@ -111,8 +112,10 @@ public class BluetoothDetector extends AbstractReceiverDetector {
         super.run();
         if (isEnabled() && isAvailable()) {
             bluetoothAdapter.getProfileProxy(context(), serviceListener, BluetoothProfile.HEADSET);
-            bluetoothAdapter.getProfileProxy(context(), serviceListener, BluetoothProfile.GATT);
-            bluetoothAdapter.getProfileProxy(context(), serviceListener, BluetoothProfile.GATT_SERVER);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                bluetoothAdapter.getProfileProxy(context(), serviceListener, BluetoothProfile.GATT);
+                bluetoothAdapter.getProfileProxy(context(), serviceListener, BluetoothProfile.GATT_SERVER);
+            }
             bluetoothAdapter.getProfileProxy(context(), serviceListener, BluetoothProfile.A2DP);
             bluetoothAdapter.getProfileProxy(context(), serviceListener, BluetoothProfile.HEALTH);
             // Start scan if long scan

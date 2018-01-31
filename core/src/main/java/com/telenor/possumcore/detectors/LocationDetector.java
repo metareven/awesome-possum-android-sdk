@@ -25,7 +25,8 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
     private static final long maxScanTime = 60*1000;
 
     public LocationDetector(@NonNull Context context) {
-        super(context, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
+        super(context);
+        addFilterAction(LocationManager.PROVIDERS_CHANGED_ACTION);
         locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         locationHandler = getHandler();
     }
