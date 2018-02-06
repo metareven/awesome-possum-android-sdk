@@ -7,7 +7,6 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -90,7 +89,7 @@ public class AmbientSoundDetector extends AbstractDetector {
         bufferSize = AudioTrack.getMinBufferSize(sampleRate(), AudioFormat.CHANNEL_OUT_MONO, audioEncoding());
         audioHandler = getAudioHandler();
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        initializeAudioRecorder();
+        audioRecorder = getAudioRecord();
     }
     // TODO: FeatureExtractor uses sampling rate of 16000, but it is recorded with sampleRate of 48000. Check with Alex.
 
@@ -126,7 +125,7 @@ public class AmbientSoundDetector extends AbstractDetector {
 
     private void stopRecording() {
         if (isRecording()) {
-            Log.d(tag, "AP: Stopping recording of ambient sound");
+//            Log.d(tag, "AP: Stopping recording of ambient sound");
             audioRecorder.stop();
         }
     }
@@ -137,11 +136,7 @@ public class AmbientSoundDetector extends AbstractDetector {
      * @return true if it is recording
      */
     private boolean isRecording() {
-        return audioRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING;
-    }
-
-    private void initializeAudioRecorder() {
-        audioRecorder = getAudioRecord();
+        return audioRecorder != null && audioRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING;
     }
 
     @Override
@@ -151,7 +146,7 @@ public class AmbientSoundDetector extends AbstractDetector {
 
     @Override
     public void run() {
-        if (isEnabled() && isAvailable()) {
+        if (isEnabled() && isAvailable() && !isRecording()) {
             super.run();
             short[] buffer = new short[bufferSize];
             int recordedSamples = 0;
@@ -161,20 +156,18 @@ public class AmbientSoundDetector extends AbstractDetector {
                 disabledMute = true;
             }
             if (audioRecorder == null || audioRecorder.getState() == AudioRecord.STATE_UNINITIALIZED) {
-                initializeAudioRecorder();
+                audioRecorder = getAudioRecord();
             }
-            Log.d(tag, "AP: Start recording ambient sound");
-            if (!isRecording()) {
-                audioRecorder.startRecording();
-                audioHandler.postDelayed(this::terminate, maxListeningTime);
-            }
+            //Log.d(tag, "AP: Start recording ambient sound");
+            audioRecorder.startRecording();
+            audioHandler.postDelayed(this::terminate, maxListeningTime);
             while (isRecording() && recordedSamples < recordingSamples) {
-                Log.i(tag, "AP: Data recording, recorded samples:"+recordedSamples);
+             //   Log.i(tag, "AP: Data recording, recorded samples:"+recordedSamples);
                 if ((readSize = audioRecorder.read(buffer, 0, bufferSize)) != AudioRecord.ERROR_INVALID_OPERATION) {
                     // Calculate features
-                    Log.i(tag, "AP: Read amount:"+readSize);
+             //       Log.i(tag, "AP: Read amount:"+readSize);
                     for (double[] window : getFeaturesFromSample(buffer, readSize, sampleRate())) {
-                        Log.i(tag, "AP: Sample: "+Arrays.toString(window));
+             //           Log.i(tag, "AP: Sample: "+Arrays.toString(window));
                         streamData(writeFeatureWindowToJsonArray(window));
                     }
                     recordedSamples += readSize;
@@ -205,11 +198,6 @@ public class AmbientSoundDetector extends AbstractDetector {
     @Override
     public String requiredPermission() {
         return Manifest.permission.RECORD_AUDIO;
-    }
-
-    @SuppressWarnings("unused")
-    protected boolean supportsUnprocessed() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && Boolean.parseBoolean(audioManager.getProperty("android.media.property.SUPPORT_AUDIO_SOURCE_UNPROCESSED"));
     }
 
     @Override
@@ -249,7 +237,7 @@ public class AmbientSoundDetector extends AbstractDetector {
         // Window size hardcoded since it need to be a power of 2 for FFT
         //int window_size = 4096; // This is a window of 85 ms @ 48000 hz sample rate
         int window_size = 2048; // This is a window of 46 ms @ 44100 hz sample rate
-        Log.i(tag, "AP: current+windowSize="+(current+window_size)+", sample size:"+sample_size);
+        //Log.i(tag, "AP: current+windowSize="+(current+window_size)+", sample size:"+sample_size);
         while (current + window_size <= sample_size) {
             try {
                 double[] window_data_abs = Arrays.copyOfRange(samples_double_abs,

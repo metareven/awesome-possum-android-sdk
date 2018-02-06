@@ -8,9 +8,6 @@ ext {
 version = VERSION_NAME
 project.version = VERSION_NAME
 
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
-
 android {
     compileSdkVersion 26
     defaultConfig {
@@ -18,9 +15,6 @@ android {
         targetSdkVersion 26
         versionCode VERSION_CODE
         versionName VERSION_NAME
-//        ndk {
-//            abiFilters "x86", "x86_64", "armeabi-v7a", "armeabi", "mips"
-//        }
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
@@ -56,8 +50,8 @@ android {
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:26.1.0'
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'com.android.support:appcompat-v7:26.1.0'
     compile 'net.danlew:android.joda:2.9.9.1'
     compile 'com.google.code.gson:gson:2.8.0'
     compile 'no.nordli:opencv_awesomepossum_repo:1.1'

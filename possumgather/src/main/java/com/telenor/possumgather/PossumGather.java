@@ -33,6 +33,7 @@ import java.util.zip.ZipOutputStream;
  */
 public class PossumGather extends PossumCore {
     private static final String tag = PossumGather.class.getName();
+    private static final String amazonCatalogue = "data.30012018";
     /**
      * Constructor for the gather library. Creating this instance will enable you to access and
      * gather data for further upload
@@ -98,7 +99,7 @@ public class PossumGather extends PossumCore {
         for (AbstractDetector detector : detectors()) {
             for (String dataSet : detector.dataStored().keySet()) {
                 try {
-                    String fileName = String.format(Locale.US, "data.30012018#%s#%s#%s#%s#%s.zip",version, detector.detectorName(), dataSet, detector.getUserId(), detector.now());
+                    String fileName = String.format(Locale.US, "%s#%s#%s#%s#%s#%s.zip",amazonCatalogue, version, detector.detectorName(), dataSet, detector.getUserId(), detector.now());
                     List<JsonArray> data = detector.dataStored().get(dataSet);
                     if (data.size() > 0) {
                         File uploadFile = new File(storedCatalogue, fileName);

@@ -20,7 +20,11 @@ public class MainActivity extends AppCompatActivity {
         if (possumGather.isListening()) {
             possumGather.stopListening();
         } else {
-            possumGather.startListening();
+            if (possumGather.hasMissingPermissions(this)) {
+                possumGather.requestNeededPermissions(this);
+            } else {
+                possumGather.startListening();
+            }
         }
     }
 

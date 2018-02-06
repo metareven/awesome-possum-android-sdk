@@ -1,6 +1,9 @@
 package com.telenor.possumcore;
 
+import android.Manifest;
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.CoreStatus;
@@ -16,11 +19,13 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
+import java.io.File;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Config(constants = BuildConfig.class)
@@ -54,15 +59,29 @@ public class PossumCoreTest {
     public void testStartListeningWithDetectors() throws Exception {
         Field detectorsField = PossumCore.class.getDeclaredField("detectors");
         detectorsField.setAccessible(true);
-        HashSet<AbstractDetector> detectors = (HashSet<AbstractDetector>)detectorsField.get(possumCore);
+        HashSet<AbstractDetector> detectors = (HashSet<AbstractDetector>) detectorsField.get(possumCore);
         Assert.assertTrue(detectors.size() == 1);
         Mockito.verify(mockedAccelerometer, Mockito.times(0)).run();
         Assert.assertTrue(possumCore.startListening());
         Field executorField = PossumCore.class.getDeclaredField("executorService");
         executorField.setAccessible(true);
-        ExecutorService service = (ExecutorService)executorField.get(possumCore);
+        ExecutorService service = (ExecutorService) executorField.get(possumCore);
         service.awaitTermination(1, TimeUnit.SECONDS);
         Mockito.verify(mockedAccelerometer, Mockito.times(1)).run();
+    }
+
+    @Test
+    public void testPermissions() throws Exception {
+        List<String> permissions = PossumCore.permissions();
+        Assert.assertTrue(permissions.contains(Manifest.permission.BLUETOOTH_ADMIN));
+        Assert.assertTrue(permissions.contains(Manifest.permission.BLUETOOTH));
+        Assert.assertTrue(permissions.contains(Manifest.permission.ACCESS_FINE_LOCATION));
+        Assert.assertTrue(permissions.contains(Manifest.permission.ACCESS_NETWORK_STATE));
+        Assert.assertTrue(permissions.contains(Manifest.permission.ACCESS_WIFI_STATE));
+        Assert.assertTrue(permissions.contains(Manifest.permission.CAMERA));
+        Assert.assertTrue(permissions.contains(Manifest.permission.RECORD_AUDIO));
+        Assert.assertTrue(permissions.contains(Manifest.permission.INTERNET));
+        Assert.assertEquals(8, permissions.size());
     }
 
     @Test
@@ -74,6 +93,11 @@ public class PossumCoreTest {
             }
         };
         Assert.assertFalse(possumCore.startListening());
+    }
+
+    @Test
+    public void testMissingPermissionsMethod() throws Exception {
+        // TODO: Test Static missingPermissions method
     }
 
     @Test
@@ -108,10 +132,10 @@ public class PossumCoreTest {
     public void testSetTimeOut() throws Exception {
         Field timeOutField = PossumCore.class.getDeclaredField("timeOut");
         timeOutField.setAccessible(true);
-        long timeout = (long)timeOutField.get(possumCore);
+        long timeout = (long) timeOutField.get(possumCore);
         Assert.assertEquals(3000, timeout);
         possumCore.setTimeOut(100);
-        timeout = (long)timeOutField.get(possumCore);
+        timeout = (long) timeOutField.get(possumCore);
         Assert.assertEquals(100, timeout);
     }
 }

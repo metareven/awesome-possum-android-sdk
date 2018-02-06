@@ -16,7 +16,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
-@Config(constants = BuildConfig.class)
+@Config(constants = BuildConfig.class, libraries = "../possumcore/")
 @RunWith(RobolectricTestRunner.class)
 public class PossumGatherTest {
     @Mock
@@ -44,5 +44,11 @@ public class PossumGatherTest {
     @Test
     public void testInitialize() throws Exception {
         Assert.assertNotNull(possumGather);
+    }
+
+    @Test
+    public void testIsUploading() throws Exception {
+        Assert.assertFalse(possumGather.isUploading(RuntimeEnvironment.application));
+        // TODO: Test while uploading as well
     }
 }

@@ -236,6 +236,19 @@ public class AbstractDetectorTest {
     }
 
     @Test
+    public void testDataStored() throws Exception {
+        Assert.assertEquals(1, abstractDetector.dataStored().size());
+        Assert.assertEquals("default", abstractDetector.dataStored().keySet().iterator().next());
+        Assert.assertEquals(0, abstractDetector.dataStored().get("default").size());
+        Assert.assertNull(abstractDetector.dataStored().get("unknown"));
+        Field dataField = AbstractDetector.class.getDeclaredField("dataStored");
+        dataField.setAccessible(true);
+        Map<String, List<JsonArray>> data = (Map<String, List<JsonArray>>)dataField.get(abstractDetector);
+        data.get("default").add(new JsonArray());
+        Assert.assertEquals(1, abstractDetector.dataStored().get("default").size());
+    }
+
+    @Test
     public void testCleanUpForCompletion() throws Exception {
         abstractDetector.cleanUp();
     }

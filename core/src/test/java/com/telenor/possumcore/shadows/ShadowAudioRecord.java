@@ -15,54 +15,59 @@ import java.io.IOException;
 /**
  * Shadow for {@link android.media.AudioRecord}.
  */
+@SuppressWarnings({"UnusedDeclaration"})
 @Implements(AudioRecord.class)
 public class ShadowAudioRecord {
-    private static FileInputStream fis = null;
-    private static String filePath = null;
-    private static boolean hasRead = false;
+    private static int minBufferSize = 100;
+    public int audioSource;
+    public int sampleRate;
+    public int channelConfig;
+    public int audioFormat;
+    public int bufferSize;
+    public boolean isRecording = false;
     private static final String tag = ShadowAudioRecord.class.getName();
 
     public ShadowAudioRecord() {
 
     }
+
     public ShadowAudioRecord(int audioSource, int sampleRate, int channelConfig, int audioFormat, int bufferSize) {
-
-        try {
-            fis = new FileInputStream(new File(filePath));
-        } catch (Exception e) {
-            Log.e(tag, "Failed:",e);
-        }
-    }
-
-    public static void setFilePath(String newFilePath) {
-        filePath = newFilePath;
+        this.audioSource = audioSource;
+        this.sampleRate = sampleRate;
+        this.channelConfig = channelConfig;
+        this.audioFormat = audioFormat;
+        this.bufferSize = bufferSize;
     }
 
     @Implementation
-    public int read(@NonNull short[] audioData, int offsetInShorts, int sizeInShorts) {
-        hasRead = true;
-        byte[] byteArr = new byte[sizeInShorts/2];
-        try {
-            return fis.read(byteArr, offsetInShorts/2, sizeInShorts/2);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read file:",e);
+    public int read(@NonNull short[] buffer, int offsetInShorts, int sizeInShorts) {
+        for (int count = offsetInShorts; count < sizeInShorts; count++) {
+            buffer[count] = (short) 1;
         }
+        return sizeInShorts;
     }
 
-    @Resetter
-    public static void reset() {
-        if (fis != null) {
-            try {
-                fis.close();
-            } catch (IOException e) {
-                Log.e(tag, "failed to close:", e);
-            }
-        }
-        filePath = null;
-        hasRead = false;
+    @Implementation
+    public void startRecording() throws IllegalStateException {
+        isRecording = true;
     }
 
-    public static boolean hasReadFromStream() {
-        return hasRead;
+    @Implementation
+    public void stop() throws IllegalStateException {
+        isRecording = false;
+    }
+
+    @Implementation
+    static public int getMinBufferSize(int sampleRateInHz, int channelConfig, int audioFormat) {
+        return minBufferSize;
+    }
+
+    @Implementation
+    public int getRecordingState() {
+        return isRecording ? AudioRecord.RECORDSTATE_RECORDING : AudioRecord.RECORDSTATE_STOPPED;
+    }
+
+    public void setMinBufferSize(final int minBufferSize) {
+        this.minBufferSize = minBufferSize;
     }
 }

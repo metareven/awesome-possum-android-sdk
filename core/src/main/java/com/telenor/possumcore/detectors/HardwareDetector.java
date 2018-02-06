@@ -1,9 +1,11 @@
 package com.telenor.possumcore.detectors;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Build;
 
 import com.google.gson.JsonArray;
+import com.telenor.possumcore.PossumCore;
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.DetectorType;
 
@@ -15,13 +17,10 @@ import java.util.List;
  * Detector meant to detect hardware info
  */
 public class HardwareDetector extends AbstractDetector {
-    /**
-     * Constructor for all detectors. Initializes a basic detector
-     *
-     * @param context a valid android context
-     */
+    private static final String permissions = "permissions";
     public HardwareDetector(Context context) {
         super(context);
+        createDataSet(permissions);
     }
 
     @Override
@@ -70,6 +69,20 @@ public class HardwareDetector extends AbstractDetector {
         // TODO: Add information about which detectors are not enabled?
         array.add("HARDWARE_INFO STOP");
         dataStored.get(defaultSet).add(array);
+
+        JsonArray permissions = new JsonArray();
+        List<String> allowedPerms = PossumCore.permissions();
+        List<String> deniedPerms = PossumCore.missingPermissions(context());
+        allowedPerms.removeAll(deniedPerms);
+        if (deniedPerms.size() > 0) {
+            permissions.add("PERMISSIONS START");
+            for (String permission : allowedPerms)
+                permissions.add(permission+" "+ PackageManager.PERMISSION_GRANTED);
+            for (String permission : deniedPerms)
+                permissions.add(permission+" " + PackageManager.PERMISSION_DENIED);
+            permissions.add("PERMISSIONS END");
+            dataStored.get(HardwareDetector.permissions).add(permissions);
+        }
     }
 
     @Override

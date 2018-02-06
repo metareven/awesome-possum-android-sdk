@@ -197,9 +197,10 @@ public abstract class PossumCore {
      *
      * @return a set with the detectors
      */
-    protected Set<AbstractDetector> detectors() {
+    public Set<AbstractDetector> detectors() {
         return detectors;
     }
+
     /**
      * The present list of dangerous permissions. Can be extended and expanded if necessary.
      *
@@ -213,7 +214,32 @@ public abstract class PossumCore {
         return dangerousPermissions;
     }
 
-    private static List<String> missingPermissions(@NonNull Context context) {
+    /**
+     * The present list of all permissions required, including the dangerous ones. Subtract the
+     * missing permissions to get a list of allowed permissions.
+     *
+     * @return a list of all permissions that Awesome Possum wants
+     */
+    public static List<String> permissions() {
+        List<String> permissions = new ArrayList<>();
+        permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        permissions.add(Manifest.permission.ACCESS_NETWORK_STATE);
+        permissions.add(Manifest.permission.BLUETOOTH);
+        permissions.add(Manifest.permission.BLUETOOTH_ADMIN);
+        permissions.add(Manifest.permission.ACCESS_WIFI_STATE);
+        permissions.add(Manifest.permission.CAMERA);
+        permissions.add(Manifest.permission.RECORD_AUDIO);
+        permissions.add(Manifest.permission.INTERNET);
+        return permissions;
+    }
+
+    /**
+     * Returns a list of which permissions are NOT granted by user
+     *
+     * @param context a valid android context
+     * @return a list of denied permissions, empty array if none
+     */
+    public static List<String> missingPermissions(@NonNull Context context) {
         List<String> missingPermissions = new ArrayList<>();
         for (String permission : dangerousPermissions()) {
             if (ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {

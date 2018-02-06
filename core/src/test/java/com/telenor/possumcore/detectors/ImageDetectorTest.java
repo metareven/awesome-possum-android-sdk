@@ -4,13 +4,21 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.PointF;
 import android.hardware.Camera;
-import android.hardware.camera2.CameraManager;
 
 import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.Frame;
+import com.google.android.gms.vision.face.Face;
+import com.google.android.gms.vision.face.Landmark;
+import com.google.gson.JsonArray;
 import com.telenor.possumcore.BuildConfig;
 import com.telenor.possumcore.TestUtils;
+import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.DetectorType;
+import com.telenor.possumcore.facedetection.FaceDetector;
 import com.telenor.possumcore.neuralnetworks.TensorWeights;
 
 import org.junit.After;
@@ -19,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
@@ -27,26 +34,34 @@ import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.shadows.ShadowCamera;
+import org.robolectric.shadows.ShadowLog;
 import org.robolectric.shadows.ShadowPackageManager;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@Config(constants = BuildConfig.class) //, abiSplit = "aarch64"
+@Config(constants = BuildConfig.class, shadows = {ShadowCamera.class}) //, abiSplit = "aarch64"
 @RunWith(RobolectricTestRunner.class)
 public class ImageDetectorTest {
     @Mock
     private Context mockedContext;
     @Mock
     private TensorWeights mockedTensor;
-    @Mock
-    private CameraManager mockedCameraManager;
     @Mock
     private CameraSource mockedCameraSource;
 
@@ -58,16 +73,8 @@ public class ImageDetectorTest {
         MockitoAnnotations.initMocks(this);
         TestUtils.initializeJodaTime();
         counter = 0;
-        Camera.CameraInfo frontCamInfo = new Camera.CameraInfo();
-        frontCamInfo.facing = Camera.CameraInfo.CAMERA_FACING_FRONT;
-        frontCamInfo.orientation = 90;
-        frontCamInfo.canDisableShutterSound = true;
-        ShadowCamera.addCameraInfo(Camera.CameraInfo.CAMERA_FACING_FRONT, frontCamInfo);
-        Camera.CameraInfo backCamInfo = new Camera.CameraInfo();
-        backCamInfo.facing = Camera.CameraInfo.CAMERA_FACING_BACK;
-        backCamInfo.orientation = 90;
-        backCamInfo.canDisableShutterSound = true;
-        ShadowCamera.addCameraInfo(Camera.CameraInfo.CAMERA_FACING_BACK, backCamInfo);
+        ShadowCamera.addCameraInfo(Camera.CameraInfo.CAMERA_FACING_FRONT, getCamInfo(Camera.CameraInfo.CAMERA_FACING_FRONT, 90, true));
+        ShadowCamera.addCameraInfo(Camera.CameraInfo.CAMERA_FACING_BACK, getCamInfo(Camera.CameraInfo.CAMERA_FACING_BACK, 90, true));
         ShadowPackageManager shadowPackageManager = Shadows.shadowOf(RuntimeEnvironment.application.getPackageManager());
         shadowPackageManager.setSystemFeature(PackageManager.FEATURE_CAMERA_FRONT, true);
         shadowPackageManager.setSystemFeature(PackageManager.FEATURE_CAMERA, true);
@@ -76,10 +83,6 @@ public class ImageDetectorTest {
 //        Assert.fail("Architecture:"+System.getProperty("os.arch"));
         when(mockedContext.checkPermission(eq(Manifest.permission.CAMERA), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         imageDetector = new ImageDetector(RuntimeEnvironment.application) {
-            @Override
-            protected CameraManager cameraManager(Context context) {
-               return mockedCameraManager;
-            }
             @Override
             protected TensorWeights createTensor(AssetManager assetManager, String modelName) {
                 return mockedTensor;
@@ -96,6 +99,16 @@ public class ImageDetectorTest {
     @After
     public void tearDown() throws Exception {
         imageDetector = null;
+        ShadowCamera.clearCameraInfo();
+    }
+
+    @SuppressWarnings("all")
+    private Camera.CameraInfo getCamInfo(int facing, int orientation, boolean disableShutterSound) {
+        Camera.CameraInfo frontCamInfo = new Camera.CameraInfo();
+        frontCamInfo.facing = facing;
+        frontCamInfo.orientation = orientation;
+        frontCamInfo.canDisableShutterSound = disableShutterSound;
+        return frontCamInfo;
     }
 
     @Test
@@ -108,6 +121,18 @@ public class ImageDetectorTest {
         Field cameraSourceField = ImageDetector.class.getDeclaredField("cameraSource");
         cameraSourceField.setAccessible(true);
         Assert.assertNotNull(cameraSourceField.get(imageDetector));
+    }
+
+    @Test
+    public void testExistenceOfDataSets() throws Exception {
+        Field dataStoredField = AbstractDetector.class.getDeclaredField("dataStored");
+        dataStoredField.setAccessible(true);
+        Map<String, List<JsonArray>> dataStored = (Map<String, List<JsonArray>>)dataStoredField.get(imageDetector);
+        Assert.assertEquals(3, dataStored.keySet().size());
+        Set<String> sets = dataStored.keySet();
+        Assert.assertTrue(sets.contains("default"));
+        Assert.assertTrue(sets.contains("lbpDataSet"));
+        Assert.assertTrue(sets.contains("landmarkDataSet"));
     }
 
     @Test
@@ -132,20 +157,6 @@ public class ImageDetectorTest {
     }
 
     @Test
-    public void testCameraNotInUse() throws Exception {
-        Assert.assertFalse(imageDetector.isCameraUsed());
-        Field availabilityCallbackField = ImageDetector.class.getDeclaredField("availabilityCallback");
-        availabilityCallbackField.setAccessible(true);
-        CameraManager.AvailabilityCallback callback = (CameraManager.AvailabilityCallback)availabilityCallbackField.get(imageDetector);
-        callback.onCameraUnavailable(""+Camera.CameraInfo.CAMERA_FACING_FRONT);
-        Assert.assertTrue(imageDetector.isCameraUsed());
-        callback.onCameraAvailable(""+Camera.CameraInfo.CAMERA_FACING_FRONT);
-        Assert.assertFalse(imageDetector.isCameraUsed());
-        callback.onCameraUnavailable(""+Camera.CameraInfo.CAMERA_FACING_BACK);
-        Assert.assertFalse(imageDetector.isCameraUsed());
-    }
-
-    @Test
     public void testRunFiresCameraSourceStart() throws Exception {
         Field camSourceField = ImageDetector.class.getDeclaredField("cameraSource");
         camSourceField.setAccessible(true);
@@ -153,6 +164,51 @@ public class ImageDetectorTest {
         verify(mockedCameraSource, never()).start();
         imageDetector.run();
         verify(mockedCameraSource, times(1)).start();
+    }
+
+    @Test
+    public void testLBP() throws Exception {
+        Bitmap bitmap = BitmapFactory.decodeStream(getClass().getClassLoader().getResourceAsStream("unittest_image.png"));
+        int[] lbpArray = imageDetector.mainLBP(bitmap);
+        // TODO: Compare to file with correct data
+    }
+
+    @Test
+    public void testLandMark() throws Exception {
+        Face mockedFace = mock(Face.class);
+        List<Landmark> landmarks = new ArrayList<>();
+        landmarks.add(new Landmark(new PointF(10, 12), Landmark.LEFT_EYE));
+        landmarks.add(new Landmark(new PointF(20, 14), Landmark.RIGHT_EYE));
+        landmarks.add(new Landmark(new PointF(15, 21), Landmark.BOTTOM_MOUTH));
+        when(mockedFace.getLandmarks()).thenReturn(landmarks);
+        List<String> output = imageDetector.landMarks(mockedFace);
+        Assert.assertEquals(9, output.size()); // 3 lines pr landmark
+        Assert.assertEquals(""+Landmark.LEFT_EYE, output.get(0));
+        Assert.assertEquals("10.0", output.get(1));
+        Assert.assertEquals("12.0", output.get(2));
+        Assert.assertEquals(""+ Landmark.RIGHT_EYE, output.get(3));
+        Assert.assertEquals("20.0", output.get(4));
+        Assert.assertEquals("14.0", output.get(5));
+        Assert.assertEquals(""+Landmark.BOTTOM_MOUTH, output.get(6));
+        Assert.assertEquals("15.0", output.get(7));
+        Assert.assertEquals("21.0", output.get(8));
+    }
+
+    @Test
+    public void testCleanUp() throws Exception {
+        Field detectorField = ImageDetector.class.getDeclaredField("detector");
+        detectorField.setAccessible(true);
+        FaceDetector fakeDetector = mock(FaceDetector.class);
+        detectorField.set(imageDetector, fakeDetector);
+        Field cameraSourceField = ImageDetector.class.getDeclaredField("cameraSource");
+        cameraSourceField.setAccessible(true);
+        CameraSource fakeSource = mock(CameraSource.class);
+        cameraSourceField.set(imageDetector, fakeSource);
+        imageDetector.cleanUp();
+        verify(fakeDetector, times(1)).destroy();
+        verify(fakeSource, times(1)).release();
+        Assert.assertNull(detectorField.get(imageDetector));
+        Assert.assertNull(cameraSourceField.get(imageDetector));
     }
 
 //    @Test
@@ -171,7 +227,62 @@ public class ImageDetectorTest {
         verify(mockedCameraSource, times(1)).stop();
     }
 
-/*    @Test
+    @Test
+    public void testRunWithFailedCameraStart() throws Exception {
+        Field camSourceField = ImageDetector.class.getDeclaredField("cameraSource");
+        camSourceField.setAccessible(true);
+        CameraSource fakeSource = mock(CameraSource.class);
+        camSourceField.set(imageDetector, fakeSource);
+        when(fakeSource.start()).thenThrow(new IOException("failed to open"));
+        ShadowLog.clear();
+        imageDetector.run();
+        Assert.assertEquals("failed to open", ShadowLog.getLogs().get(0).throwable.getMessage());
+    }
+
+    @Test
+    public void testFaceFoundWithNoLandmarks() throws Exception {
+        Face mockedFace = mock(Face.class);
+        Frame mockedFrame = mock(Frame.class);
+        Frame.Metadata mockedMetaData = mock(Frame.Metadata.class);
+        when(mockedFrame.getMetadata()).thenReturn(mockedMetaData);
+        when(mockedMetaData.getRotation()).thenReturn(Frame.ROTATION_90);
+        when(mockedMetaData.getHeight()).thenReturn(96);
+        when(mockedMetaData.getWidth()).thenReturn(96);
+        InputStream is = getClass().getClassLoader().getResourceAsStream("unittest_image.png");
+        Bitmap img = BitmapFactory.decodeStream(is);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(img.getByteCount());
+        img.copyPixelsToBuffer(byteBuffer);
+        byteBuffer.rewind();
+        when(mockedFrame.getGrayscaleImageData()).thenReturn(byteBuffer);
+        when(mockedFrame.getBitmap()).thenReturn(img);
+        imageDetector.faceFound(mockedFace, mockedFrame);
+    }
+
+    @Test
+    public void testFaceFoundWithCorrectLandmarks() throws Exception {
+        Face mockedFace = mock(Face.class);
+        List<Landmark> landmarkList = new ArrayList<>();
+        landmarkList.add(new Landmark(new PointF(20, 20), Landmark.LEFT_EYE));
+        landmarkList.add(new Landmark(new PointF(80, 20), Landmark.RIGHT_EYE));
+        landmarkList.add(new Landmark(new PointF(50, 70), Landmark.BOTTOM_MOUTH));
+        when(mockedFace.getLandmarks()).thenReturn(landmarkList);
+        Frame mockedFrame = mock(Frame.class);
+        Frame.Metadata mockedMetaData = mock(Frame.Metadata.class);
+        when(mockedFrame.getMetadata()).thenReturn(mockedMetaData);
+        when(mockedMetaData.getRotation()).thenReturn(Frame.ROTATION_90);
+        when(mockedMetaData.getHeight()).thenReturn(96);
+        when(mockedMetaData.getWidth()).thenReturn(96);
+        InputStream is = getClass().getClassLoader().getResourceAsStream("unittest_image.png");
+        Bitmap img = BitmapFactory.decodeStream(is);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(img.getByteCount());
+        img.copyPixelsToBuffer(byteBuffer);
+        byteBuffer.rewind();
+        when(mockedFrame.getGrayscaleImageData()).thenReturn(byteBuffer);
+        when(mockedFrame.getBitmap()).thenReturn(img);
+        imageDetector.faceFound(mockedFace, mockedFrame);
+    }
+
+    /*    @Test
     public void testAffineTransform() throws Exception {
         PointF leftEye = new PointF(30, 30);
         PointF rightEye = new PointF(60, 30);

@@ -12,13 +12,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.YuvImage;
-import android.hardware.Camera;
-import android.hardware.camera2.CameraManager;
-import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
 import android.support.annotation.RequiresPermission;
 import android.util.Log;
 
@@ -26,6 +20,7 @@ import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.Landmark;
+import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.DetectorType;
 import com.telenor.possumcore.facedetection.FaceDetector;
@@ -42,6 +37,10 @@ import org.opencv.core.Point;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Vector;
 
 import static org.opencv.imgproc.Imgproc.getAffineTransform;
 import static org.opencv.imgproc.Imgproc.warpAffine;
@@ -49,58 +48,29 @@ import static org.opencv.imgproc.Imgproc.warpAffine;
 public class ImageDetector extends AbstractDetector implements IFaceFound {
     private static TensorWeights tensorFlowInterface;
     private static FaceDetector detector; // To prevent changes during configChanges it is static
-    private CameraManager cameraManager;
     private CameraSource cameraSource;
-    private boolean isCameraUsed;
-    private CameraManager.AvailabilityCallback availabilityCallback;
     private static final int PREVIEW_WIDTH = 640;
     private static final int PREVIEW_HEIGHT = 480;
     private static final int OUTPUT_BMP_WIDTH = 96;
     private static final int OUTPUT_BMP_HEIGHT = 96;
     private boolean isProcessingFace;
+    private static final String lbpDataSet = "lbpDataSet";
+    private static final String landmarkDataSet = "landmarkDataSet";
     private static final String modelName = "tensorflow_facerecognition.pb";
 
     public ImageDetector(@NonNull Context context) {
         super(context);
         setupCameraSource();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            setupCameraManager(context);
-        }
+        createDataSet(lbpDataSet);
+        createDataSet(landmarkDataSet);
         try {
             tensorFlowInterface = createTensor(context.getAssets(), modelName);
             initializeOpenCV();
         } catch (Exception e) {
-            Log.e(tag, "AP: Failed to initialize tensorFlow or openCV:",e);
+            Log.e(tag, "AP: Failed to initialize tensorFlow or openCV:", e);
         }
     }
 
-    @RequiresApi(api=Build.VERSION_CODES.LOLLIPOP)
-    private void setupCameraManager(@NonNull Context context) {
-        cameraManager = cameraManager(context);
-        availabilityCallback = new CameraManager.AvailabilityCallback() {
-            @Override
-            public void onCameraAvailable(@NonNull String cameraId) {
-                Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-                Camera.getCameraInfo(Integer.parseInt(cameraId), cameraInfo);
-                if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT)
-                    isCameraUsed = false;
-            }
-
-            @Override
-            public void onCameraUnavailable(@NonNull String cameraId) {
-                Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-                Camera.getCameraInfo(Integer.parseInt(cameraId), cameraInfo);
-                if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT)
-                    isCameraUsed = true;
-            }
-        };
-        cameraManager.registerAvailabilityCallback(availabilityCallback, new Handler(Looper.getMainLooper()));
-    }
-
-    @RequiresApi(api=Build.VERSION_CODES.LOLLIPOP)
-    protected CameraManager cameraManager(Context context) {
-        return (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-    }
     /**
      * The face detector is the actual detector finding the face in a video stream. It handles
      * setting up google vision, setting the custom face detector to report faces in the interface
@@ -159,36 +129,13 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     @RequiresPermission(Manifest.permission.CAMERA)
     @Override
     public void run() {
-        if (isEnabled() && isAvailable() && !isCameraUsed()) {
+        if (isEnabled() && isAvailable()) {
             isProcessingFace = false;
             try {
                 cameraSource.start();
             } catch (IOException e) {
                 Log.i(tag, "AP: IO:", e);
             }
-        }
-    }
-
-    /**
-     * An external and internal way to check whether camera is in use or not
-     *
-     * @return true if camera is used, false if not
-     */
-    public boolean isCameraUsed() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return isCameraUsed;
-        } else {
-            // Faulty method, will cause app to remove presently using app
-            Camera camera = null;
-            try {
-                camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT);
-            } catch (RuntimeException e) {
-                Log.i(tag, "AP: Camera already open:",e);
-                return true;
-            } finally {
-                if (camera != null) camera.release();
-            }
-            return false;
         }
     }
 
@@ -214,17 +161,17 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         // TODO: IMPORTANT: Some devices have differing output from CameraSource. Some output landscape, other portrait. How to handle this?
         int orientation = -1;
         switch (frame.getMetadata().getRotation()) {
-            case 1:
+            case Frame.ROTATION_0://1:
                 orientation = 0;
                 break;
-            case 3:
+            case Frame.ROTATION_90://3:
                 orientation = -90;//180;
                 break;
-            case 6:
-                orientation = 0;//270;
+            case Frame.ROTATION_180://6:
+                orientation = -180;//270;
                 break;
-            case 8:
-                orientation = 0;//360;
+            case Frame.ROTATION_270://8:
+                orientation = 90;//360;
                 break;
         }
         Matrix matrix = new Matrix();
@@ -243,7 +190,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         }
         if (leftEye != null && rightEye != null && mouth != null) {
             isProcessingFace = true;
-            Log.d(tag, "AP: Face found");
+//            Log.d(tag, "AP: Face found");
             PointF centroid = new PointF((rightEye.x + leftEye.x + mouth.x) / 3, (rightEye.y + leftEye.y + mouth.y) / 3);
             float diffX = 1.5f * Math.abs(leftEye.x - rightEye.x);
             RectF faceFrame = new RectF(centroid.x - diffX, centroid.y - diffX, centroid.x + diffX, centroid.y + diffX);
@@ -257,19 +204,353 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             PointF movedRightEye = new PointF(rightEye.x - faceFrame.left, rightEye.y - faceFrame.top);
             PointF movedMouth = new PointF(mouth.x - faceFrame.left, mouth.y - faceFrame.top);
 
-            Log.d(tag, "AP: Before aligning face");
+//            Log.d(tag, "AP: Before aligning face");
             Bitmap alignedFace = alignFace(fixedImage, movedLeftEye, movedRightEye, movedMouth);
             if (alignedFace == null) {
-                Log.d(tag, "AP: Aligned face");
+//                Log.d(tag, "AP: Aligned face");
                 isProcessingFace = false;
                 return;
             }
 
             final Bitmap scaledOutput = Bitmap.createScaledBitmap(alignedFace, OUTPUT_BMP_WIDTH, OUTPUT_BMP_HEIGHT, false);
-            float[] rgbArray = bitmapToIntArray(scaledOutput);
-            streamData(tensorFlowInterface.getWeights(rgbArray, now()));
+
+            long nowTimestamp = now();
+            // Tensor weights
+            streamData(tensorFlowInterface.getWeights(scaledOutput, nowTimestamp));
+
+            // LBP array
+            JsonArray lbpArray = new JsonArray();
+            lbpArray.add(""+nowTimestamp);
+            lbpArray.add(Arrays.toString(mainLBP(scaledOutput)));
+            streamData(lbpArray, lbpDataSet);
+
+            // Landmark array
+            JsonArray landMarkArray = new JsonArray();
+            landMarkArray.add(""+nowTimestamp);
+            for (String landmark : landMarks(face)) {
+                landMarkArray.add(landmark);
+            }
+            streamData(landMarkArray, landmarkDataSet);
+
             isProcessingFace = false;
         }
+    }
+
+    int[] mainLBP(Bitmap image) {
+        // Convert the input image to a matrix image
+        double[][] realImage = imageConversion(image);
+
+        // Calculate the number of squares
+        int bw = 8; // Magic number
+        int bh = 8; // Magic number
+        int nbx = (int) Math.floor(realImage.length / bw);
+        int nby = (int) Math.floor(realImage.length / bh);
+        // Create the LBP vector
+        return LBPVector(realImage, nbx, nby, bw, bh);
+    }
+
+    List<String> landMarks(Face face) {
+        List<String> landmarkData = new ArrayList<>();
+        for (Landmark landmark : face.getLandmarks()) {
+            landmarkData.add(""+ landmark.getType());
+            landmarkData.add(""+landmark.getPosition().x);
+            landmarkData.add(""+landmark.getPosition().y);
+        }
+        return landmarkData;
+    }
+
+    // Function to convert a image to a double matrix image
+    private double[][] imageConversion(Bitmap image) {
+        if (image.getWidth() != OUTPUT_BMP_HEIGHT || image.getHeight() != OUTPUT_BMP_HEIGHT)
+            image = Bitmap.createScaledBitmap(image, OUTPUT_BMP_WIDTH, OUTPUT_BMP_HEIGHT, true);
+        double[][] realImage = new double[image.getHeight()][image.getWidth()];
+        for (int x = 0; x < image.getWidth(); x++)
+            for (int y = 0; y < image.getHeight(); y++) {
+                int pixel = image.getPixel(x, y);
+                int r = (pixel >> 16) & 0xff;
+                int g = (pixel >> 8) & 0xff;
+                int b = pixel & 0xff;
+                realImage[y][x] = (r + g + b) / 3 + 1;
+            }
+        return realImage;
+    }
+
+    // Function to create the final LBP vector
+    private int[] LBPVector(double[][] realImage, int nbx, int nby, int bw, int bh) {
+        int samples = 16;
+        int max = samples * (samples - 1) + 3;
+        int index = 0;
+        Vector<Integer> table = new Vector<>((int) Math.pow(2, samples));
+
+        for (int i = 0; i <= (Math.pow(2, samples)) - 1; i++) {
+            int shift = (i % 32768) << 1;
+            //int shift = (i%128) << 1;
+            int position = (i >> (samples - 1));
+
+            int j = shift + position;
+
+            int xor = i ^ j;
+            int numt = 0;
+            for (int s = 0; s < samples; s++) {
+                byte tt = (byte) ((xor >> (s) & 1));
+                numt = numt + tt;
+            }
+
+            if (numt <= 2) {
+                table.add(i, index);
+                index += 1;
+
+            } else {
+                table.add(i, max - 1);
+            }
+        }
+
+
+        int width1 = realImage.length;
+        int height1 = realImage.length;
+
+        int[] LBPUTexDesc = new int[max * nbx * nby];
+        int[] lim1 = new int[(int) Math.ceil(width1 / bw)];
+        int[] lim2 = new int[width1 / bw];
+        int[] lim3 = new int[(int) Math.ceil(height1 / bh)];
+        int[] lim4 = new int[height1 / bh];
+
+        int cont = 0;
+        int conti = 0;
+        for (int ii = 0; ii < width1; ii = ii + bw) {
+            if (conti < lim1.length)
+                lim1[conti] = ii;
+
+            if (conti < lim2.length)
+                lim2[conti] = bw + ii - 1;
+            conti++;
+        }
+        conti = 0;
+        for (int ii = 0; ii < height1; ii = ii + bh) {
+            if (conti < lim3.length)
+                lim3[conti] = ii;
+            if (conti < lim4.length)
+                lim4[conti] = bh + ii - 1;
+            conti++;
+        }
+
+
+        for (int ii = 0; ii < nbx; ii++) {
+            for (int jj = 0; jj < nby; jj++) {
+                double[][] imregion = new double[bw][bh];
+
+                int ci = 0;
+                int cj = 0;
+                for (int i = lim1[ii]; i <= lim2[ii]; i++) {
+                    for (int j = lim3[jj]; j <= lim4[jj]; j++) {
+                        imregion[cj][ci] = realImage[j][i];
+                        cj++;
+                    }
+                    cj = 0;
+                    ci++;
+                }
+
+                int[] finalHist = lbpAux(imregion, table, max, samples);
+                if (finalHist == null) {
+                    // TODO: What here?
+                    return null;
+                }
+                for (int contador = 0; contador < finalHist.length; contador++) {
+                    LBPUTexDesc[contador + cont] = finalHist[contador];
+                }
+                cont = cont + finalHist.length;
+
+            }
+        }
+        return LBPUTexDesc;
+    }
+
+    // Function to create the LBP vector of each region
+    private static int[] lbpAux(double[][] imregion, Vector<Integer> table, int max, int samples) {
+        double radius = 2;
+
+        double angle = 2 * Math.PI / samples;
+
+        double[][] points = new double[samples][2];
+        double min_x = 0;
+        double min_y = 0;
+        double max_x = 0;
+        double max_y = 0;
+
+        for (int n1 = 0; n1 < samples; n1++) {
+            for (int n2 = 0; n2 < 1; n2++) {
+                points[n1][n2] = -radius * Math.sin((n1) * angle);
+                points[n1][n2 + 1] = radius * Math.cos((n1) * angle);
+
+                if (points[n1][n2] < min_x) {
+                    min_x = points[n1][n2];
+                }
+                if (points[n1][n2 + 1] < min_y) {
+                    min_y = points[n1][n2 + 1];
+                }
+                if (points[n1][n2] > max_x) {
+                    max_x = points[n1][n2];
+                }
+                if (points[n1][n2 + 1] > max_y) {
+                    max_y = points[n1][n2 + 1];
+                }
+            }
+        }
+
+        long max_y_round = Math.round(max_y);
+        long min_y_round = Math.round(min_y);
+        long max_x_round = Math.round(max_x);
+        long min_x_round = Math.round(min_x);
+
+        int coord_x = (int) (1 - min_x_round);
+        int coord_y = (int) (1 - min_y_round);
+
+        if (imregion.length < (max_y_round - min_y_round + 1) && (imregion.length) < (max_x_round - min_x_round + 1)) {
+            System.out.println("Error, image too small");
+            // TODO: What here?
+            return null;
+        }
+
+        double dx = imregion.length - (max_x_round - min_x_round + 1);
+        double dy = imregion.length - (max_y_round - min_y_round + 1);
+
+
+        double[][] C = new double[(int) (dy + 1)][(int) (dx + 1)];
+
+        for (int jj = coord_x - 1; jj <= coord_x + dx - 1; jj++) {
+            for (int tt = coord_y - 1; tt <= coord_y + dy - 1; tt++) {
+                C[jj - (coord_x - 1)][tt - (coord_y - 1)] = imregion[jj][tt];
+            }
+        }
+
+        double[][] result = new double[(int) (dy + 1)][(int) (dx + 1)];
+        double[][] result2 = new double[(int) (dy + 1)][(int) (dx + 1)];
+
+
+        int[][] D = new int[(int) (dy + 1)][(int) (dx + 1)];
+        for (int i = 0; i < samples; i++) {
+
+            double y = (points[i][0] + coord_y);
+            double x = (points[i][1] + coord_x);
+
+            double fy = Math.floor(y);
+            double cy = Math.ceil(y);
+            double ry = Math.round(y);
+            double fx = Math.floor(x);
+            double cx = Math.ceil(x);
+            double rx = Math.round(x);
+
+
+            if (Math.abs(x - rx) < Math.pow(10, -6) && Math.abs(y - ry) < Math.pow(10, -6)) {
+                double[][] N = new double[(int) (dy + 1)][(int) (dx + 1)];
+
+                for (int jj = (int) rx - 1; jj <= rx + dx - 1; jj++) {
+                    for (int tt = (int) ry - 1; tt <= ry + dy - 1; tt++) {
+                        N[(int) (tt - (ry - 1))][(int) (jj - (rx - 1))] = imregion[tt][jj];
+                    }
+                }
+                for (int jj = 0; jj < (dy + 1); jj++) {
+                    for (int tt = 0; tt < (dx + 1); tt++) {
+                        if (N[jj][tt] >= C[jj][tt]) {
+                            D[jj][tt] = 1;
+                        } else {
+                            D[jj][tt] = 0;
+                        }
+                    }
+                }
+            } else {
+
+                double ty = y - fy;
+                double tx = x - fx;
+
+                double w1 = Math.round((1 - tx) * (1 - ty) * 1000000);
+                w1 = w1 / 1000000;
+                double w2 = Math.round(tx * (1 - ty) * 1000000);
+                w2 = w2 / 1000000;
+                double w3 = Math.round((1 - tx) * ty * 1000000);
+                w3 = w3 / 1000000;
+                double w4 = Math.round((1 - w1 - w2 - w3) * 1000000);
+                w4 = w4 / 1000000;
+
+                double[][] N4 = new double[(int) (dy + 1)][(int) (dx + 1)];
+                double[][] N1 = new double[(int) (dy + 1)][(int) (dx + 1)];
+                double[][] N2 = new double[(int) (dy + 1)][(int) (dx + 1)];
+                double[][] N3 = new double[(int) (dy + 1)][(int) (dx + 1)];
+                double[][] N = new double[(int) (dy + 1)][(int) (dx + 1)];
+
+                //W1
+                for (int jj = (int) fx - 1; jj <= fx + dx - 1; jj++) {
+                    for (int tt = (int) fy - 1; tt <= fy + dy - 1; tt++) {
+                        N1[(int) (tt - (fy - 1))][(int) (jj - (fx - 1))] = w1 * imregion[tt][jj];
+                    }
+                }
+
+                //W2
+                for (int jj = (int) cx - 1; jj <= cx + dx - 1; jj++) {
+                    for (int tt = (int) fy - 1; tt <= fy + dy - 1; tt++) {
+                        N2[(int) (tt - (fy - 1))][(int) (jj - (cx - 1))] = w2 * imregion[tt][jj];
+                    }
+                }
+
+                //W3
+                for (int jj = (int) fx - 1; jj <= fx + dx - 1; jj++) {
+                    for (int tt = (int) cy - 1; tt <= cy + dy - 1; tt++) {
+                        N3[(int) (tt - (cy - 1))][(int) (jj - (fx - 1))] = w3 * imregion[tt][jj];
+                    }
+                }
+
+                //W4
+                for (int jj = (int) cx - 1; jj <= cx + dx - 1; jj++) {
+                    for (int tt = (int) cy - 1; tt <= cy + dy - 1; tt++) {
+                        N4[(int) (tt - (cy - 1))][(int) (jj - (cx - 1))] = w4 * imregion[tt][jj];
+                    }
+                }
+
+                for (int jj = 0; jj < (dy + 1); jj++) {
+                    for (int tt = 0; tt < (dx + 1); tt++) {
+                        //System.out.println(N1[jj][tt]+ " and " +N2[jj][tt] + " and " +N3[jj][tt] +  " and " +N4[jj][tt]);
+                        N[jj][tt] = N1[jj][tt] + N2[jj][tt] + N3[jj][tt] + N4[jj][tt];
+                        double ex = Math.round(N[jj][tt] * 10000);
+                        N[jj][tt] = ex / 10000;
+                    }
+                }
+
+                for (int jj = 0; jj < (dy + 1); jj++) {
+                    for (int tt = 0; tt < (dx + 1); tt++) {
+                        if (N[jj][tt] >= C[jj][tt]) {
+                            D[jj][tt] = 1;
+                        } else {
+                            D[jj][tt] = 0;
+                        }
+                    }
+                }
+
+            } //End else
+
+            double v = Math.pow(2, (i));
+            for (int jj = 0; jj < (dy + 1); jj++) {
+                for (int tt = 0; tt < (dx + 1); tt++) {
+                    result[jj][tt] = result[jj][tt] + (v * D[jj][tt]);
+                }
+            }
+        }
+
+        for (int jj = 0; jj < (dy + 1); jj++) {
+            for (int tt = 0; tt < (dx + 1); tt++) {
+                result2[jj][tt] = table.get((int) (result[jj][tt]));
+            }
+        }
+
+        int[] finalResult = new int[max];
+
+        for (int jj = 0; jj < (dy + 1); jj++) {
+            for (int tt = 0; tt < (dx + 1); tt++) {
+                int position = (int) (result2[jj][tt]);
+                finalResult[position] = finalResult[position] + 1;
+            }
+        }
+
+        return finalResult;
     }
 
     /**
@@ -285,25 +566,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         yuvimage.compressToJpeg(new Rect(0, 0, width, height), 100, byteArrayOutputStream); // Where 100 is the quality of the generated jpeg
         return byteArrayOutputStream.toByteArray();
-    }
-
-    private static float[] bitmapToIntArray(Bitmap image) {
-        int width = image.getWidth();
-        int height = image.getHeight();
-        int[] pixels = new int[width * height];
-        image.getPixels(pixels, 0, width, 0, 0, width, height);
-        if (width != height) {
-            throw new java.lang.Error("BitmapToIntArray only makes sense on square images");
-        }
-        float[] intArray = new float[width * width * 3];
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < width; j++) {
-                intArray[i * width + 3 * j] = (pixels[i * j] >> 16) & 0xff;
-                intArray[i * width + 3 * j + 1] = (pixels[i * j] >> 8) & 0xff;
-                intArray[i * width + 3 * j + 2] = pixels[i * j] & 0xff;
-            }
-        }
-        return intArray;
     }
 
 /*    public static Matrix affineTransform(float width, float height, PointF leftEye, PointF rightEye, PointF mouth) {
@@ -337,9 +599,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             cameraSource.release();
             cameraSource = null;
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            cameraManager.unregisterAvailabilityCallback(availabilityCallback);
-        }
     }
 
     private static Bitmap alignFace(Bitmap face, PointF leftEye, PointF rightEye, PointF mouth) {
@@ -350,8 +609,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
 //        Matrix affineTransform = affineTransform(face.getWidth(), face.getHeight(), leftEye, rightEye, mouth);
 
 
-
-       // float[] pixels = bitmapToIntArray(face);
+        // float[] pixels = bitmapToIntArray(face);
         MatOfPoint2f src = new MatOfPoint2f();
         MatOfPoint2f dest = new MatOfPoint2f();
 
@@ -381,24 +639,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
 
         return alignedFace;
     }
-
-/*    protected int[] LBPFromBitmap(Bitmap bitmap) {
-        int[] vectorLBPU = new int[0];
-        try {
-            // Convert the input image to a matrix image
-            double[][] realImage = imageConversion(image);
-
-            // Calculate the number of squares
-            int bw = 8;
-            int bh = 8;
-            int nbx = (int) Math.floor(realImage.length / bw);
-            int nby = (int) Math.floor(realImage.length / bh);
-
-            // Create the LBP vector
-            vectorLBPU = exec(realImage, nbx, nby, bw, bh);
-
-        }
-    }*/
 
     @Override
     public String requiredPermission() {

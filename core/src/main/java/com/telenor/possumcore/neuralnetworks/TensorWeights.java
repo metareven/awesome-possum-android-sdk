@@ -1,6 +1,7 @@
 package com.telenor.possumcore.neuralnetworks;
 
 import android.content.res.AssetManager;
+import android.graphics.Bitmap;
 
 import com.google.gson.JsonArray;
 
@@ -24,9 +25,9 @@ public class TensorWeights extends TensorFlowInferenceInterface {
         super(assetManager, s);
     }
 
-    public JsonArray getWeights(float[] rgbArray, long timestamp) {
+    public JsonArray getWeights(Bitmap bitmap, long timestamp) {
         float[] result = new float[128];
-        feed(INPUT_NODE, rgbArray, 1, PIXEL_SIZE, PIXEL_SIZE, INPUT_SIZE);
+        feed(INPUT_NODE, bitmapToFloatArray(bitmap), 1, PIXEL_SIZE, PIXEL_SIZE, INPUT_SIZE);
         run(OUTPUT_NODES);
         fetch(OUTPUT_NODE, result);
         JsonArray data = new JsonArray();
@@ -35,5 +36,24 @@ public class TensorWeights extends TensorFlowInferenceInterface {
             data.add("" + weight);
         }
         return data;
+    }
+
+    static float[] bitmapToFloatArray(Bitmap image) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+        int[] pixels = new int[width * height];
+        image.getPixels(pixels, 0, width, 0, 0, width, height);
+        if (width != height) {
+            throw new java.lang.Error("BitmapToIntArray only makes sense on square images");
+        }
+        float[] array = new float[width * width * 3];
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < width; j++) {
+                array[i * width + 3 * j] = (pixels[i * j] >> 16) & 0xff;
+                array[i * width + 3 * j + 1] = (pixels[i * j] >> 8) & 0xff;
+                array[i * width + 3 * j + 2] = pixels[i * j] & 0xff;
+            }
+        }
+        return array;
     }
 }
