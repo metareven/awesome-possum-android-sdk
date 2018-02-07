@@ -40,7 +40,7 @@ public abstract class PossumCore {
         thread.setPriority(Thread.MIN_PRIORITY);
         return thread;
     });
-    private AtomicBoolean deniedConversation = new AtomicBoolean(false);
+    private AtomicBoolean deniedCamera = new AtomicBoolean(false);
     private long timeOut = 3000; // Default timeOut
     private static final String tag = PossumCore.class.getName();
 
@@ -81,7 +81,7 @@ public abstract class PossumCore {
         if (status.get() != CoreStatus.Idle || detectors == null || detectors.size() == 0)
             return false;
         for (AbstractDetector detector : detectors) {
-            if (deniedConversation.get() && (detector instanceof ImageDetector || detector instanceof AmbientSoundDetector))
+            if (deniedCamera.get() && (detector instanceof ImageDetector || detector instanceof AmbientSoundDetector))
                 continue;
             executorService.submit(detector);
         }
@@ -154,20 +154,18 @@ public abstract class PossumCore {
     }
 
     /**
-     * Prevents image detector and ambient sound detector from being used. This due to an issue
+     * Prevents image detector from being used. This due to an issue
      * causing pre-lollipop phones (api 21) to not be able to detect whether camera is in use or
      * not. As a consequence, before any video conferences or microphone/camera uses, this method
      * should be called to prevent it from listening in on these sensors when this is needed.
      */
-    public void denyConversationDetectors() {
-        // TODO: Rename method
+    public void denyCamera() {
         for (AbstractDetector detector : detectors) {
-            if (detector instanceof ImageDetector ||
-                    detector instanceof AmbientSoundDetector) {
+            if (detector instanceof ImageDetector) {
                 detector.terminate();
             }
         }
-        deniedConversation.set(true);
+        deniedCamera.set(true);
     }
 
     /**
@@ -178,17 +176,15 @@ public abstract class PossumCore {
      * <p>
      * Note: This method only needs to be called if you previously denied image/sound
      */
-    public void allowConverationDetectors() {
-        // TODO: Rename method
-        if (isListening() && deniedConversation.get()) {
+    public void allowCamera() {
+        if (isListening() && deniedCamera.get()) {
             for (AbstractDetector detector : detectors) {
-                if (detector instanceof ImageDetector ||
-                        detector instanceof AmbientSoundDetector) {
+                if (detector instanceof ImageDetector ) {
                     // Submit if already denied
                     executorService.submit(detector);
                 }
             }
-            deniedConversation.set(false);
+            deniedCamera.set(false);
         }
     }
 
