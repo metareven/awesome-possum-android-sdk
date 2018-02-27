@@ -9,7 +9,6 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -19,6 +18,10 @@ import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractReceiverDetector;
 import com.telenor.possumcore.constants.DetectorType;
 
+/**
+ * Uses bonded bluetooth devices to see if you are close to your environment as well as
+ * scanning for your nearby bluetooth devices to determine proximity to known environment
+ */
 public class BluetoothDetector extends AbstractReceiverDetector {
     private BluetoothAdapter bluetoothAdapter;
     private Handler handler = new Handler();
@@ -49,10 +52,10 @@ public class BluetoothDetector extends AbstractReceiverDetector {
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
                 ScanRecord record = result.getScanRecord();
-                int txPowerLvl;
-                if (record != null) {
+                int txPowerLvl = Integer.MIN_VALUE;
+                if (record != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     txPowerLvl = (short) record.getTxPowerLevel(); // Transmission power level in Db
-                } else txPowerLvl = Integer.MIN_VALUE;
+                }
                 BluetoothDevice device = result.getDevice();
                 JsonArray data = new JsonArray();
                 data.add("" + now()); // Timestamp

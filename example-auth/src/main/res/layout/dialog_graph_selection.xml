@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_marginStart="20dp"
+    android:layout_marginEnd="20dp"
+    android:layout_height="match_parent">
+    <TextView
+        android:id="@+id/title"
+        android:layout_alignParentTop="true"
+        android:layout_width="match_parent"
+        android:text="@string/selectGraphsToShow"
+        android:textStyle="bold"
+        android:layout_margin="20dp"
+        android:layout_height="wrap_content" />
+    <LinearLayout
+        android:id="@+id/confirmButtons"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="20dp"
+        style="?android:attr/buttonBarStyle"
+        android:layout_width="match_parent"
+        android:weightSum="2"
+        android:layout_height="wrap_content">
+        <Button
+            style="?android:attr/buttonBarButtonStyle"
+            android:id="@+id/cancel"
+            android:layout_width="0dp"
+            android:text="@string/cancel"
+            android:layout_weight="1"
+            android:layout_height="wrap_content" />
+        <Button
+            style="?android:attr/buttonBarButtonStyle"
+            android:id="@+id/ok"
+            android:layout_width="0dp"
+            android:text="@string/ok"
+            android:layout_weight="1"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_below="@id/title"
+        android:layout_above="@id/confirmButtons"
+        android:layout_width="match_parent"
+        android:layout_marginBottom="20dp"
+        android:layout_height="match_parent" />
+</RelativeLayout>

@@ -39,9 +39,6 @@ android {
         main {
             jni.srcDirs = ["src/main/jniLibs"]
         }
-        test {
-            jni.srcDirs = ["src/test/jniLibs"]
-        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -50,16 +47,16 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:26.1.0'
-    compile 'net.danlew:android.joda:2.9.9.1'
-    compile 'com.google.code.gson:gson:2.8.0'
-    compile 'no.nordli:opencv_awesomepossum_repo:1.1'
-    compile 'com.google.android.gms:play-services-vision:11.8.0'
-    compile 'org.tensorflow:tensorflow-android:1.4.0'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    api 'net.danlew:android.joda:2.9.9.1'
+    api 'com.google.code.gson:gson:2.8.0'
+    api 'no.nordli:opencv_awesomepossum_repo:1.1'
+    api 'com.google.android.gms:play-services-vision:11.8.0'
+    api 'org.tensorflow:tensorflow-android:1.4.0'
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.robolectric:robolectric:3.6.1'
-    testCompile 'org.robolectric:shadows-support-v4:3.3.2'
-    testCompile 'org.mockito:mockito-core:2.13.0'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.robolectric:robolectric:3.6.1'
+    testImplementation 'org.robolectric:shadows-support-v4:3.3.2'
+    testImplementation 'org.mockito:mockito-core:2.13.0'
 }

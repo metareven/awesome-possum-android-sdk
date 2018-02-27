@@ -3,7 +3,6 @@ package com.telenor.possumcore.detectors;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -16,8 +15,10 @@ import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractReceiverDetector;
 import com.telenor.possumcore.constants.DetectorType;
 
-/***
- * Uses gps or network to retrieve your location and time
+/**
+ * Retrieves locational information based on network or gps to pinpoint your whereabouts in
+ * correspondence to your present data in order to indicate if you follow your standard
+ * patterns or not
  */
 public class LocationDetector extends AbstractReceiverDetector implements LocationListener {
     private LocationManager locationManager;

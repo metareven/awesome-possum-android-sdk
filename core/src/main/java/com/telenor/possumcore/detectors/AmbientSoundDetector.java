@@ -9,7 +9,6 @@ import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
@@ -21,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/***
+/**
  * Uses microphone for ambient sound analysis. Removes voices and uses background noise with
  * diverse filters to weight the background waves. Cannot be converted back into audio after
  * weighting.

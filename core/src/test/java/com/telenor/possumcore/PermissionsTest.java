@@ -13,7 +13,7 @@ import org.robolectric.res.FsFile;
 
 import java.util.List;
 
-@Config(manifest = Config.NONE)
+@Config(constants = BuildConfig.class) //, manifest = Config.NONE
 @RunWith(RobolectricTestRunner.class)
 public class PermissionsTest {
     @Test
@@ -23,7 +23,7 @@ public class PermissionsTest {
         FsFile androidManifestFile = FileFsFile.from(moduleRoot, "src/main/AndroidManifest.xml");
         FsFile resDirectory = FileFsFile.from(moduleRoot, "src/main/res");
         FsFile assetsDirectory = FileFsFile.from(moduleRoot, "src/main/assets");
-        AndroidManifest androidManifest =  new AndroidManifest(androidManifestFile, resDirectory, assetsDirectory);
+        AndroidManifest androidManifest = new AndroidManifest(androidManifestFile, resDirectory, assetsDirectory);
         List<String> usedPermissions = androidManifest.getUsedPermissions();
         Assert.assertTrue(usedPermissions.contains(Manifest.permission.ACCESS_FINE_LOCATION));
         Assert.assertTrue(usedPermissions.contains(Manifest.permission.ACCESS_NETWORK_STATE));
@@ -37,7 +37,10 @@ public class PermissionsTest {
     }
 
     private String getModuleRootPath(Config config) {
-        String moduleRoot = config.constants().getResource("").toString().replace("file:", "").replace("jar:", "");
+        String moduleRoot = config.constants().
+                getResource("").toString().
+                replace("file:", "").
+                replace("jar:", "");
         return moduleRoot.substring(0, moduleRoot.indexOf("/build"));
     }
 }

@@ -1,5 +1,7 @@
 package com.telenor.possumgather.upload;
 
+import android.content.Intent;
+
 import com.telenor.possumgather.BuildConfig;
 
 import org.junit.After;
@@ -27,5 +29,10 @@ public class AmazonUploadServiceTest {
     @Test
     public void testInitialize() throws Exception {
         Assert.assertNotNull(service);
+    }
+
+    @Test
+    public void testBindReturnsNull() throws Exception {
+        Assert.assertNull(service.onBind(new Intent()));
     }
 }

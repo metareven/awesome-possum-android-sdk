@@ -1,29 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="com.telenor.possumauth.example.MainActivity">
-    <SurfaceView
-        android:id="@+id/camera_preview"
+    android:layout_height="match_parent">
+    <android.support.design.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-    <Button
-        android:onClick="toggleProcess"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="StopMe!"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
-        tools:ignore="HardcodedText" />
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Toggle Camera"
-        android:onClick="toggleCam"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="20dp"
-        tools:ignore="HardcodedText" />
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true"
+        tools:context="com.telenor.possumauth.example.MainActivity">
+
+        <FrameLayout
+            android:id="@+id/mainFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+    </android.support.design.widget.CoordinatorLayout>
 </RelativeLayout>

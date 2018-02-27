@@ -14,7 +14,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Detector meant to detect hardware info
+ * Retrieves your device' hardware information, like android version or model. This
+ * to determine if there are correlation between specific models or versions and data accuracy
  */
 public class HardwareDetector extends AbstractDetector {
     private static final String permissions = "permissions";
@@ -49,7 +50,6 @@ public class HardwareDetector extends AbstractDetector {
         array.add("Manufacturer:" + Build.MANUFACTURER);
         array.add("Model:" + Build.MODEL);
         array.add("Product:" + Build.PRODUCT);
-        array.add("Serial:" + Build.SERIAL); // Not recommended method
         array.add("Version:" + Build.VERSION.SDK_INT + " (" + Build.VERSION.CODENAME + ")");
         StringBuilder output = new StringBuilder();
         List<String> supported = new ArrayList<>();

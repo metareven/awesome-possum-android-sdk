@@ -1,3 +1,4 @@
+[![GitHub license](https://img.shields.io/github/license/telenordigital/awesome-possum.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 # PossumGather
 
 An data gathering library using the PossumCore as basis meant for gathering data, analysing it and 
@@ -48,7 +49,7 @@ uploading the data or deleting it.
 
 When you desire to send the data to the cloud for storage, use the
 
-    possumGather.upload(Context context, String identityPoolId, String bucket);
+    possumGather.upload(Context context, String identityPoolId, String regionName, String bucket);
     
 to upload all stored data to the cloud. All successfully sent will be deleted, so repeated calls to 
 this method is possible.

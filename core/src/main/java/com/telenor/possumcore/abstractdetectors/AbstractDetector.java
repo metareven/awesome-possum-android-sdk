@@ -188,7 +188,7 @@ public abstract class AbstractDetector implements Runnable {
      * Handles writing data from detector to an outputStream. Note atm it only stores to internal
      * memory. Overridden methods will handle the rest
      *
-     * @param data the data you want to write in the form of a jsonArray
+         * @param data the data you want to write in the form of a jsonArray
      */
     protected void streamData(JsonArray data) {
         streamData(data, defaultSet);

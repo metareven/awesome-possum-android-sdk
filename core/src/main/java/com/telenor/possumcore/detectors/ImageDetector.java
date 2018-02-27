@@ -45,6 +45,10 @@ import java.util.Vector;
 import static org.opencv.imgproc.Imgproc.getAffineTransform;
 import static org.opencv.imgproc.Imgproc.warpAffine;
 
+/**
+ * Uses your back camera to try to get a facial assessment, utilizing image recognition to see
+ * whether you are yourself or not
+ */
 public class ImageDetector extends AbstractDetector implements IFaceFound {
     private static TensorWeights tensorFlowInterface;
     private static FaceDetector detector; // To prevent changes during configChanges it is static

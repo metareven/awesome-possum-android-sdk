@@ -2,8 +2,7 @@ package com.telenor.possumgather;
 
 import android.content.Context;
 
-import com.telenor.possumcore.TestUtils;
-import com.telenor.possumcore.detectors.Accelerometer;
+import com.telenor.possumgather.mockedDetectors.MockedAccelerometer;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -14,13 +13,11 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
-import org.robolectric.annotation.Config;
 
-@Config(constants = BuildConfig.class, libraries = "../possumcore/")
 @RunWith(RobolectricTestRunner.class)
 public class PossumGatherTest {
     @Mock
-    private Accelerometer mockedAccelerometer;
+    private MockedAccelerometer mockedAccelerometer;
 
     private PossumGather possumGather;
 

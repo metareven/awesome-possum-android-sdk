@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <ImageView
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:src="@mipmap/ic_launcher_app"
+        android:layout_width="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/app_name" />
+    <TextView
+        android:id="@+id/status"
+        android:layout_alignParentTop="true"
+        android:layout_width="wrap_content"
+        android:layout_margin="10dp"
+        android:layout_centerHorizontal="true"
+        android:layout_height="wrap_content" />
+    <com.telenor.possumauth.example.views.TrustButton
+        android:id="@+id/trustWheel"
+        android:layout_width="250dp"
+        android:layout_marginTop="20dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/status"
+        android:layout_height="250dp" />
+    <com.telenor.possumauth.example.views.IconWheel
+        android:id="@+id/iconWheel"
+        android:layout_width="300dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/status"
+        android:layout_height="300dp" />
+
+    <RelativeLayout
+        android:id="@+id/graphContainer"
+        android:layout_below="@id/trustWheel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <android.support.design.widget.TabLayout
+            android:id="@+id/tabLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            app:tabBackground="@drawable/tab_selector"
+            app:tabGravity="center"
+            app:tabIndicatorHeight="0dp" />
+
+        <android.support.v4.view.ViewPager
+            android:id="@+id/viewPager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </RelativeLayout>
+</RelativeLayout>

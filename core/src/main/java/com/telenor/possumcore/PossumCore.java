@@ -14,7 +14,6 @@ import android.util.Log;
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.Constants;
 import com.telenor.possumcore.constants.CoreStatus;
-import com.telenor.possumcore.detectors.AmbientSoundDetector;
 import com.telenor.possumcore.detectors.ImageDetector;
 
 import java.util.ArrayList;
@@ -80,8 +79,9 @@ public abstract class PossumCore {
     public boolean startListening() {
         if (status.get() != CoreStatus.Idle || detectors == null || detectors.size() == 0)
             return false;
+
         for (AbstractDetector detector : detectors) {
-            if (deniedCamera.get() && (detector instanceof ImageDetector || detector instanceof AmbientSoundDetector))
+            if (detector instanceof ImageDetector && deniedCamera.get())
                 continue;
             executorService.submit(detector);
         }
@@ -117,7 +117,7 @@ public abstract class PossumCore {
      * @param newConfig the new configuration it is in
      */
     public void onConfigurationChanged(Configuration newConfig) {
-        Log.d(tag, "AP: New Configuration:" + newConfig.toString());
+        Log.d(tag, "AP: New Configuration:" + newConfig);
         // TODO: Need a working configChanged representation
     }
 
@@ -141,6 +141,15 @@ public abstract class PossumCore {
     }
 
     /**
+     * A handy way to get the version of the possumCore library
+     * @param context a valid android context
+     * @return a string representing the current version of the library
+     */
+    public static String version(@NonNull Context context) {
+        return context.getString(R.string.possum_core_version_name);
+    }
+
+    /**
      * Method for retrieving the needed permissions. Will not be called if no permissions are
      * missing. If an app using the sdk wants the sdk to start when permissions are granted, they
      * should override the onRequestPermissionsResult in the activity
@@ -154,12 +163,13 @@ public abstract class PossumCore {
     }
 
     /**
-     * Prevents image detector from being used. This due to an issue
-     * causing pre-lollipop phones (api 21) to not be able to detect whether camera is in use or
-     * not. As a consequence, before any video conferences or microphone/camera uses, this method
-     * should be called to prevent it from listening in on these sensors when this is needed.
+     * Prevents image detector from being used. This due to an issue causing pre-lollipop phones
+     * (api 21) to not be able to detect whether camera is in use or not. As a consequence, before
+     * any video conferences or camera uses, this method should be called to prevent it from
+     * listening in on these sensors when this is needed.
      */
     public void denyCamera() {
+        if (deniedCamera.get()) return;
         for (AbstractDetector detector : detectors) {
             if (detector instanceof ImageDetector) {
                 detector.terminate();
@@ -169,22 +179,23 @@ public abstract class PossumCore {
     }
 
     /**
-     * Allows image detector and ambient sound detector to be used. This due to an issue
-     * causing pre-lollipop phones (api 21) to not be able to detect whether camera is in use or
-     * not. As a consequence, after any video conferences or microphone/camera uses, this method
-     * should be called to allow it to listen in on these sensors when this is needed.
+     * Allows image detector to be used. This due to an issue causing pre-lollipop phones (api 21)
+     * to not be able to detect whether camera is in use or not. As a consequence, after any video
+     * conferences or camera uses, this method should be called to allow it to listen in on this
+     * sensor when this is needed.
      * <p>
-     * Note: This method only needs to be called if you previously denied image/sound
+     * Note: This method only needs to be called if you previously denied the camera
      */
     public void allowCamera() {
-        if (isListening() && deniedCamera.get()) {
+        if (!deniedCamera.get()) return;
+        deniedCamera.set(false);
+        if (isListening()) {
             for (AbstractDetector detector : detectors) {
                 if (detector instanceof ImageDetector ) {
                     // Submit if already denied
                     executorService.submit(detector);
                 }
             }
-            deniedCamera.set(false);
         }
     }
 
@@ -284,5 +295,18 @@ public abstract class PossumCore {
      */
     public boolean isListening() {
         return status.get() == CoreStatus.Running;
+    }
+
+    /**
+     * Retrieve a detector with a given type from the presently stored detectors
+     *
+     * @param detectorType a detectorType from the DetectorType constants
+     * @return the desired detector or null if not found
+     */
+    public AbstractDetector detectorWithType(int detectorType) {
+        for (AbstractDetector detector : detectors) {
+            if (detector.detectorType() == detectorType) return detector;
+        }
+        return null;
     }
 }

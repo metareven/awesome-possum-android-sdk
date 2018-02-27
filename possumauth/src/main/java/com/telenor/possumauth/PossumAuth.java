@@ -46,6 +46,16 @@ public class PossumAuth extends PossumCore {
     }
 
     /**
+     * A handy way to get the version of the possumAuth library
+     * @param context a valid android context
+     * @return a string representing the current version of the library
+     */
+    public static String version(@NonNull Context context) {
+        return context.getString(R.string.possum_auth_version_name);
+    }
+
+
+    /**
      * Shorthand method for verify. Starts upload
      * @return false if no data is available to send or it failed to send data
      */

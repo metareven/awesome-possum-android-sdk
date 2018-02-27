@@ -42,7 +42,7 @@ public class PossumGather extends PossumCore {
      */
     public PossumGather(Context context, String uniqueUserId) {
         super(context, uniqueUserId);
-        setTimeOut(600000); // Maximum 10 minutes of listening before session is ended
+        setTimeOut(300000); // Maximum 5 minutes of listening before session is ended
     }
 
     /**
@@ -84,6 +84,16 @@ public class PossumGather extends PossumCore {
         }
     }
 
+    /**
+     * A handy way to get the version of the possumGather library
+     * @param context a valid android context
+     * @return a string representing the current version of the library
+     */
+    public static String version(@NonNull Context context) {
+        return context.getString(R.string.possum_gather_version_name);
+    }
+
+
     @Override
     public void stopListening() {
         super.stopListening();
@@ -94,7 +104,7 @@ public class PossumGather extends PossumCore {
         }
         Context context = detectors().iterator().next().context();
         File storedCatalogue = GatherUtils.storageCatalogue(context);
-        String version = context.getString(R.string.possumgather_version);
+        String version = version(context);
 
         for (AbstractDetector detector : detectors()) {
             for (String dataSet : detector.dataStored().keySet()) {
@@ -133,6 +143,7 @@ public class PossumGather extends PossumCore {
      * Function for determining how much data is stored as files
      * @return the bytes stored in all saved datafiles
      */
+    @SuppressWarnings("unused")
     public long spaceUsed(@NonNull Context context) {
         List<File> files = GatherUtils.getFiles(context);
         long size = 0;
@@ -148,6 +159,7 @@ public class PossumGather extends PossumCore {
      * @param context a valid android context
      * @return true if service is uploading, false if not
      */
+    @SuppressWarnings("all")
     public boolean isUploading(@NonNull Context context) {
         ActivityManager activityManager = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
         if (activityManager == null) return false;

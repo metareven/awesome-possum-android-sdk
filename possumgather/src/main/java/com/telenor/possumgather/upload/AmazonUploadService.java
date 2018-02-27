@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AmazonUploadService extends Service implements TransferListener, IdentityChangedListener {
     private CognitoCachingCredentialsProvider cognitoProvider;
     private SparseArray<File> filesUploaded;
+    private String regionName;
     private AtomicInteger fileCounter;
     private String bucket;
     private static final String tag = AmazonUploadService.class.getName();
@@ -44,7 +45,7 @@ public class AmazonUploadService extends Service implements TransferListener, Id
         }
         String identityPoolId = intent.getStringExtra("identityPoolId");
         bucket = intent.getStringExtra("bucket");
-        String version = getResources().getString(R.string.possumgather_version);
+        String version = getResources().getString(R.string.possum_gather_version_name);
         Log.i(tag, "AP: Version number:" + version);
         if (identityPoolId == null || bucket == null) {
             // Sending in invalid parameters terminates service as well as any already running
@@ -52,11 +53,12 @@ public class AmazonUploadService extends Service implements TransferListener, Id
             Log.i(tag, "AP: Service missing parameters, stopping:" + identityPoolId + "," + bucket);
             stopSelf();
         } else {
+            regionName = identityPoolId.split(":")[0];
             filesUploaded = new SparseArray<>();
             cognitoProvider = new CognitoCachingCredentialsProvider(
                     this,
                     identityPoolId,
-                    Regions.EU_CENTRAL_1 // Region
+                    Regions.fromName(regionName)
             );
             if (cognitoProvider.getCachedIdentityId() != null) {
                 Log.i(tag, "AP: Found identity, starting");
@@ -80,7 +82,7 @@ public class AmazonUploadService extends Service implements TransferListener, Id
 
     private void startUpload() {
         AmazonS3Client amazonS3Client = new AmazonS3Client(cognitoProvider);
-        amazonS3Client.setRegion(Region.getRegion(Regions.EU_CENTRAL_1));
+        amazonS3Client.setRegion(Region.getRegion(Regions.fromName(regionName)));
         TransferUtility transferUtility = new TransferUtility(amazonS3Client, this);
         List<File> files = GatherUtils.getFiles(this);
         fileCounter = new AtomicInteger(files.size());

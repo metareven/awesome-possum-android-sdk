@@ -2,7 +2,6 @@ package com.telenor.possumcore.detectors;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
@@ -12,6 +11,11 @@ import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractReceiverDetector;
 import com.telenor.possumcore.constants.DetectorType;
 
+/**
+ * Scans for your nearby networks in order to check whether your time and place
+ * matches up with your regular routine. Note that iOS can only retrieve your
+ * presently connected network without some private api access
+ */
 public class NetworkDetector extends AbstractReceiverDetector {
     private WifiManager wifiManager;
     private int wifiState = WifiManager.WIFI_STATE_DISABLED;

@@ -19,6 +19,7 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        resValue "string", "possum_auth_version_name", VERSION_NAME
     }
 
     buildTypes {
