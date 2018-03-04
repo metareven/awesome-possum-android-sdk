@@ -7,6 +7,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,16 +24,16 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.telenor.possumauth.PossumAuth;
 import com.telenor.possumauth.example.AppConstants;
 import com.telenor.possumauth.example.GraphUtil;
-import com.telenor.possumauth.example.MainActivity;
 import com.telenor.possumauth.example.R;
-import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 
-public class AllSensorsChartFragment extends TrustFragment {
+import java.util.Locale;
+
+public class AllDetectorsChartFragment extends TrustFragment {
     private LineChart lineChart;
     private JsonParser parser;
+    private Handler handler = new Handler(Looper.getMainLooper());
     private JsonArray presentArray;
     private BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
@@ -39,9 +41,6 @@ public class AllSensorsChartFragment extends TrustFragment {
             changeGraphs();
         }
     };
-
-    @SuppressWarnings("unused")
-    private static final String tag = AllSensorsChartFragment.class.getName();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
@@ -54,7 +53,7 @@ public class AllSensorsChartFragment extends TrustFragment {
         parser = new JsonParser();
         getContext().registerReceiver(receiver, new IntentFilter(AppConstants.UPDATE_GRAPHS));
         LineData lineData = new LineData();
-        lineChart = (LineChart) view.findViewById(R.id.lineChart);
+        lineChart = view.findViewById(R.id.lineChart);
         lineChart.setTouchEnabled(false);
         lineChart.setScaleEnabled(false);
         lineChart.setPinchZoom(false);
@@ -95,6 +94,19 @@ public class AllSensorsChartFragment extends TrustFragment {
         lineChart.setData(lineData);
     }
 
+    @Override
+    public void newTrustScore(String graphName, float newScore) {
+
+    }
+
+    @Override
+    public void detectorValues(String detectorName, String dataSetName, float score, float training) {
+        String graphName = String.format(Locale.US, "%s:%s", shortHand(detectorName), shortHand(dataSetName));
+        if (isGraphVisible(graphName)) {
+            addEntry(graphName, score);
+        }
+    }
+
     private boolean isGraphVisible(String graphName) {
         if (presentArray == null) return false;
         for (JsonElement el : presentArray) {
@@ -110,32 +122,34 @@ public class AllSensorsChartFragment extends TrustFragment {
     }
 
     private void changeGraphs() {
-        SharedPreferences prefs = getContext().getSharedPreferences(AppConstants.SHARED_PREFERENCES, Context.MODE_PRIVATE);
-        presentArray = (JsonArray)parser.parse(prefs.getString(AppConstants.STORED_GRAPH_DISPLAY, "[]"));
-        for (JsonElement el : presentArray) {
-            JsonObject obj = el.getAsJsonObject();
-            String graphName = obj.get("name").getAsString();
-            String[] names = graphName.split(":");
-            String shortGraphName = String.format("%s:%s",shortHand(names[0]), shortHand(names[1]));
-            boolean isShown = obj.get("isShown").getAsBoolean();
-            ILineDataSet dataSet = lineChart.getLineData().getDataSetByLabel(shortGraphName, true);
-            if (!isShown) {
-                if (dataSet != null) {
-                    lineChart.getLineData().removeDataSet(dataSet);
-                    lineChart.getLineData().notifyDataChanged();
-                }
-            } else {
-                if (dataSet == null) {
-                    ILineDataSet set = GraphUtil.lineDataSet(shortGraphName);
-                    // TODO: Remove the adding of a 0 entry?
-                    set.addEntry(new Entry(set.getEntryCount(), 0));
-                    lineChart.getLineData().addDataSet(set);
-                    lineChart.getLineData().notifyDataChanged();
+        handler.post(() -> {
+            SharedPreferences prefs = getContext().getSharedPreferences(AppConstants.SHARED_PREFERENCES, Context.MODE_PRIVATE);
+            presentArray = (JsonArray)parser.parse(prefs.getString(AppConstants.STORED_GRAPH_DISPLAY, "[]"));
+            for (JsonElement el : presentArray) {
+                JsonObject obj = el.getAsJsonObject();
+                String graphName = obj.get("name").getAsString();
+                String[] names = graphName.split(":");
+                String shortGraphName = String.format("%s:%s",shortHand(names[0]), shortHand(names[1]));
+                boolean isShown = obj.get("isShown").getAsBoolean();
+                ILineDataSet dataSet = lineChart.getLineData().getDataSetByLabel(shortGraphName, true);
+                if (!isShown) {
+                    if (dataSet != null) {
+                        lineChart.getLineData().removeDataSet(dataSet);
+                        lineChart.getLineData().notifyDataChanged();
+                    }
+                } else {
+                    if (dataSet == null) {
+                        ILineDataSet set = GraphUtil.lineDataSet(shortGraphName);
+                        // TODO: Remove the adding of a 0 entry?
+                        set.addEntry(new Entry(set.getEntryCount(), 0));
+                        lineChart.getLineData().addDataSet(set);
+                        lineChart.getLineData().notifyDataChanged();
+                    }
                 }
             }
-        }
-        lineChart.notifyDataSetChanged();
-        lineChart.invalidate();
+            lineChart.notifyDataSetChanged();
+            lineChart.invalidate();
+        });
     }
 
     @Override
@@ -148,17 +162,6 @@ public class AllSensorsChartFragment extends TrustFragment {
     public void onResume() {
         super.onResume();
         changeGraphs();
-    }
-
-    @Override
-    public void changeInDetectorTrust(final int detectorType, final float newTrustScore, final String status, final String graphName) {
-        //Log.d(tag, "Trustscore: all sensor trust:" + AwesomePossum.detectorNameByType(detectorType) + ", " + newTrustScore + ", " + status + ", graph:" + graphName);
-        PossumAuth possumAuth = ((MainActivity)getActivity()).possumAuth();
-        AbstractDetector detector = possumAuth.detectorWithType(detectorType);
-        String appendedGraphName = shortHand(detector.detectorName() + ":" + shortHand(graphName));
-        if (isGraphVisible(appendedGraphName)) {
-            addEntry(appendedGraphName, newTrustScore);
-        }
     }
 
     private String shortHand(String name) {

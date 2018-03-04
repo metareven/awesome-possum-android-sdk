@@ -109,7 +109,8 @@ public class PossumGather extends PossumCore {
         for (AbstractDetector detector : detectors()) {
             for (String dataSet : detector.dataStored().keySet()) {
                 try {
-                    String fileName = String.format(Locale.US, "%s#%s#%s#%s#%s#%s.zip",amazonCatalogue, version, detector.detectorName(), dataSet, detector.getUserId(), detector.now());
+                    String setName = dataSet.equals("default")?detector.detectorName():dataSet;
+                    String fileName = String.format(Locale.US, "%s#%s#%s#%s#%s.zip",amazonCatalogue, version, setName, detector.getUserId(), detector.now());
                     List<JsonArray> data = detector.dataStored().get(dataSet);
                     if (data.size() > 0) {
                         File uploadFile = new File(storedCatalogue, fileName);

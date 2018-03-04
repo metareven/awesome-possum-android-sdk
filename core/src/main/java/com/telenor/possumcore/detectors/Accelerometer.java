@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractSensorDetector;
 import com.telenor.possumcore.constants.DetectorType;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 
 /**
  * Uses accelerometer to determine the movement/gait of the user, as well as detecting motion
@@ -15,7 +16,10 @@ import com.telenor.possumcore.constants.DetectorType;
  */
 public class Accelerometer extends AbstractSensorDetector {
     public Accelerometer(@NonNull Context context) {
-        super(context, Sensor.TYPE_ACCELEROMETER);
+        this(context, null);
+    }
+    public Accelerometer(@NonNull Context context, IDetectorChange listener) {
+        super(context, Sensor.TYPE_ACCELEROMETER, listener);
     }
 
     @Override

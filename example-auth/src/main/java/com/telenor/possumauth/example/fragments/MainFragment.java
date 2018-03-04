@@ -1,12 +1,17 @@
 package com.telenor.possumauth.example.fragments;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -16,21 +21,23 @@ import android.widget.TextView;
 
 import com.telenor.possumauth.PossumAuth;
 import com.telenor.possumauth.example.MainActivity;
+import com.telenor.possumauth.example.Messaging;
 import com.telenor.possumauth.example.R;
+import com.telenor.possumauth.example.Send;
+import com.telenor.possumauth.example.views.IconWheel;
 import com.telenor.possumauth.example.views.TrustButton;
+import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 
-public class MainFragment extends Fragment {
+public class MainFragment extends TrustFragment {
+    private IconWheel iconWheel;
     private TrustButton trustButton;
+    private boolean isRegistered;
     private TextView status;
-/*    private long clientGatherStart;
-    private long clientGatherEnd;
-    private long clientSendStart;
-    private long clientSendEnd;
-    private long serverWaitStart;
-    private long serverWaitEnd;*/
     private PossumAuth possumAuth;
-    private static final boolean isGathering = false; // Set to false if it should do authentication
     private MyPagerAdapter adapter;
+    private boolean startedAuth;
+    private BroadcastReceiver receiver;
+    private Handler handler = new Handler(Looper.getMainLooper());
     private static final String tag = MainFragment.class.getName();
 
     @Override
@@ -41,26 +48,67 @@ public class MainFragment extends Fragment {
     @Override
     public void onViewCreated(View view, Bundle bundle) {
         super.onViewCreated(view, bundle);
-        possumAuth = ((MainActivity)getActivity()).possumAuth();
-//        AwesomePossum.addTrustListener(getContext(), this);
-        status = view.findViewById(R.id.status);
-//        AwesomePossum.addMessageListener(getContext(), this);
-        trustButton = view.findViewById(R.id.trustWheel);
-        trustButton.setOnClickListener(v -> {
-            if (((MainActivity) getActivity()).validId(myId())) {
-                /*if (AwesomePossum.isAuthorized(getActivity(), myId())) {
-                    if (trustButton.isAuthenticating()) {
-                        trustButton.stopAuthenticate();
-                    } else {
-                        clientGatherStart = System.currentTimeMillis();
-                        trustButton.authenticate(myId());
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int msgType = intent.getIntExtra("msgType", 0);
+                if (msgType != 0) {
+                    switch (msgType) {
+                        case Messaging.AUTH_RETURNED:
+                        case Messaging.AUTH_START:
+                            if (startedAuth) {
+                                trustButton.authenticate();
+                                status.setText("Collecting data");
+                                possumAuth.startListening();
+                            }
+                            break;
+                        case Messaging.AUTH_TERMINATE:
+                            trustButton.stopAuthenticate();
+                            status.setText("Stopped auth");
+                            possumAuth.stopListening();
+                            break;
+                        case Messaging.AUTH_VERIFY:
+                            status.setText("Communicating with server");
+                            trustButton.stopAuthenticate();
+                            possumAuth.stopListening();
+                            possumAuth.authenticate();
+                            break;
+                        case Messaging.READY_TO_AUTH:
+                            status.setText("Ready to auth");
+                            trustButton.setEnabled(true);
+                            break;
+                        default:
                     }
                 } else {
-                    Log.i(tag, "Show authorize dialog");
-//                        AwesomePossum.getAuthorizeDialog(getActivity(), myId(), getString(R.string.identityPoolId), "Authorize AwesomePossum", "We need permission from you", "Granted", "Denied").show();
-                }*/
+                    status.setText(intent.getStringExtra("message"));
+                }
+            }
+        };
+        possumAuth = ((MainActivity) getActivity()).possumAuth();
+        status = view.findViewById(R.id.status);
+        iconWheel = view.findViewById(R.id.iconWheel);
+        trustButton = view.findViewById(R.id.trustWheel);
+        if (((MainActivity) getActivity()).validId(myId())) {
+            status.setText("Ready for auth");
+            trustButton.setEnabled(true);
+        } else {
+            status.setText("Need a user id");
+            trustButton.setEnabled(false);
+        }
+        trustButton.setOnClickListener(v -> {
+            if (possumAuth.hasMissingPermissions(getContext())) {
+                possumAuth.requestNeededPermissions(getActivity());
             } else {
-                ((MainActivity) getActivity()).showInvalidIdDialog();
+                if (((MainActivity) getActivity()).validId(myId())) {
+                    startedAuth = !startedAuth;
+                    if (!startedAuth) {
+                        Send.message(getContext(), Messaging.AUTH_TERMINATE);
+                    } else {
+                        Send.message(getContext(), Messaging.AUTH_START);
+                    }
+                } else {
+                    ((MainActivity) getActivity()).showInvalidIdDialog();
+                }
             }
         });
         ViewPager viewPager = view.findViewById(R.id.viewPager);
@@ -71,14 +119,7 @@ public class MainFragment extends Fragment {
         tabLayout.setupWithViewPager(viewPager);
         viewPager.setCurrentItem(0);
         setHasOptionsMenu(true);
-        updateStatus();
-/*        if (!((MainActivity) getActivity()).validId(myId())) {
-            Send.messageIntent(getContext(), Messaging.MISSING_VALID_ID, null);
-        } else {
-            Send.messageIntent(getContext(), Messaging.READY_TO_AUTH, null);
-        }*/
     }
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem menuItem) {
@@ -86,200 +127,84 @@ public class MainFragment extends Fragment {
     }
 
     @Override
+    public void newTrustScore(String graphName, float newScore) {
+        if (startedAuth) {
+            if (newScore >= 0) {
+                if ("default".equals(graphName)) {
+                    handler.post(() -> trustButton.setTrustScore(newScore * 100, null));
+                }
+                adapter.myPages.get(0).newTrustScore(graphName, newScore);
+                adapter.myPages.get(1).newTrustScore(graphName, newScore);
+            } else {
+                handler.post(() -> trustButton.setTrustScore(0, "Failed"));
+            }
+        }
+    }
+
+    @Override
+    public void detectorValues(String detectorName, String dataSetName, float score, float training) {
+        if (startedAuth) {
+            iconWheel.updateSensorTrainingStatus(PossumAuth.detectorTypeFromName(detectorName), training);
+            adapter.myPages.get(0).detectorValues(detectorName, dataSetName, score, training);
+            adapter.myPages.get(1).detectorValues(detectorName, dataSetName, score, training);
+        }
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
-//        AwesomePossum.sendDetectorStatus(getContext());
-        for (int i=0; i < adapter.getCount(); i++) {
-            Log.i(tag, "Adding "+adapter.getItem(i)+" to trust listening");
-//            AwesomePossum.addTrustListener(getContext(), (TrustFragment)adapter.getItem(i));
+        if (!isRegistered) {
+            getContext().getApplicationContext().registerReceiver(receiver, new IntentFilter("PossumMessage"));
+            isRegistered = true;
         }
+        for (AbstractDetector detector : possumAuth.detectors())
+            iconWheel.detectorChanged(detector);
+        for (int i = 0; i < adapter.getCount(); i++)
+            possumAuth.addChangeListener(adapter.getItem(i));
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        if (isRegistered) {
+            getContext().getApplicationContext().unregisterReceiver(receiver);
+            isRegistered = false;
+        }
         trustButton.stopAuthenticate();
-        for (int i=0; i < adapter.getCount(); i++) {
-//            AwesomePossum.removeTrustListener((TrustFragment)adapter.getItem(i));
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-//        AwesomePossum.removeTrustListener(this);
-//        AwesomePossum.removeMessageListener(this);
-    }
-
-    private void updateStatus() {
-  /*      if (!((MainActivity) getActivity()).validId(myId())) {
-            Send.messageIntent(getActivity(), Messaging.MISSING_VALID_ID, null);
-            return;
-        }
-        Send.messageIntent(getContext(), Messaging.READY_TO_AUTH, null);*/
+        for (int i = 0; i < adapter.getCount(); i++)
+            possumAuth.removeChangeListener(adapter.getItem(i));
     }
 
     private String myId() {
         return ((MainActivity) getActivity()).myId();
     }
 
-
-/*    @Override
-    public void changeInCombinedTrust(final float combinedTrustScore, final String status, String graphName) {
-        Do.onMain(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(tag, "Trustscore: Combined trust:"+combinedTrustScore+", Status:"+status);
-                trustButton.setTrustScore(combinedTrustScore * 100, null);
-            }
-        });
-    }
-
-    @Override
-    public void changeInDetectorTrust(int detectorType, float newTrustScore, String status, String graphName) {
-    }
-
-    @Override
-    public void failedToAscertainTrust(Exception exception) {
-        Log.e(tag, "Failed to ascertain trust:", exception);
-        Do.onMain(new Runnable() {
-            @Override
-            public void run() {
-                trustButton.setTrustScore(0, "Failed");
-            }
-        });
-    }
-
-    @Override
-    public void possumMessageReceived(final String msgType, final String message) {
-        Do.onMain(new Runnable() {
-            @Override
-            public void run() {
-                switch (msgType) {
-                    case Messaging.GATHERING:
-                        status.setText(getContext().getString(R.string.gathering));
-                        status.setTextColor(Color.BLACK);
-                        trustButton.setEnabled(true);
-                        break;
-                    case Messaging.MISSING_VALID_ID:
-                        status.setText(R.string.error_too_short_id);
-                        status.setTextColor(Color.RED);
-                        trustButton.setEnabled(false);
-                        break;
-                    case Messaging.AUTH_STOP:
-                        status.setText(R.string.stopped_auth);
-                        status.setTextColor(Color.BLACK);
-                        trustButton.setEnabled(true);
-                        trustButton.stopAuthenticate();
-                        break;
-                    case Messaging.AUTH_DONE:
-                        serverWaitEnd = System.currentTimeMillis();
-                        Log.d(tag, "TestAuth: Server response wait time: "+(serverWaitEnd-serverWaitStart)+" ms");
-                        Log.d(tag, "TestAuth: Total roundTime:"+((clientGatherEnd-clientGatherStart)+(clientSendEnd-clientSendStart)+(serverWaitEnd-serverWaitStart))+" ms");
-                        if (trustButton.isAuthenticating()) {
-                            clientGatherStart = System.currentTimeMillis();
-                            trustButton.authenticate(myId());
-                        }
-                        break;
-                    case Messaging.AUTH_FAILED:
-                        status.setText(String.format(Locale.US, "%s:%s", getString(R.string.authentication_failed), message));
-                        status.setTextColor(Color.RED);
-                        trustButton.setEnabled(true);
-                        serverWaitEnd = System.currentTimeMillis();
-                        Log.d(tag, "TestAuth: Server response wait time: "+(serverWaitEnd-serverWaitStart)+" ms");
-                        Log.d(tag, "TestAuth: Total roundTime:"+((clientGatherEnd-clientGatherStart)+(clientSendEnd-clientSendStart)+(serverWaitEnd-serverWaitStart))+" ms");
-                        break;
-                    case Messaging.READY_TO_AUTH:
-                        status.setText(R.string.all_ok);
-                        status.setTextColor(Color.BLACK);
-                        trustButton.setEnabled(true);
-                        break;
-                    case Messaging.POSSUM_MESSAGE:
-                        break;
-                    case Messaging.FACE_FOUND:
-                        break;
-                    case Messaging.SENDING_RESULT:
-                        status.setText(getContext().getString(R.string.sending_result));
-                        status.setTextColor(Color.BLACK);
-                        trustButton.setEnabled(true);
-                        break;
-                    case Messaging.START_SERVER_DATA_SEND:
-                        clientGatherEnd = System.currentTimeMillis();
-                        Log.d(tag, "TestAuth: Time spent gathering data:"+(clientGatherEnd-clientGatherStart)+" ms");
-                        clientSendStart = Long.parseLong(message);
-                        status.setText(getString(R.string.sending_data_to_server));
-                        status.setTextColor(Color.BLACK);
-                        trustButton.setEnabled(true);
-                        break;
-                    case Messaging.VERIFICATION_SUCCESS:
-                        status.setText(getContext().getString(R.string.verification_success));
-                        status.setTextColor(Color.BLACK);
-                        trustButton.setEnabled(true);
-                        break;
-                    case Messaging.WAITING_FOR_SERVER_RESPONSE:
-                        clientSendEnd = System.currentTimeMillis();
-                        status.setText(getString(R.string.waiting_for_server_response));
-                        status.setTextColor(Color.BLACK);
-                        serverWaitStart = Long.parseLong(message);
-                        Log.d(tag, "TestAuth: Time spent processing and sending: "+(clientSendEnd-clientSendStart)+" ms");
-                        trustButton.setEnabled(true);
-                        break;
-                    case Messaging.DETECTORS_STATUS:
-                    case Messaging.POSSUM_PREVIEWS:
-                    case Messaging.POSSUM_PREVIEWS_INVALID:
-                    case Messaging.REQUEST_DETECTORS:
-                        break;
-                    default:
-//                        status.setText(message);
-//                        status.setTextColor(Color.RED);
-//                        trustButton.setEnabled(false);
-                        Log.e(tag, "Sending data: Unhandled possum message:" + msgType + ":" + message);
-                }
-            }
-        });
-    }
-
-    @Override
-    public void possumFaceFound(byte[] dataReceived) {
-    }
-
-    @Override
-    public void possumImageSnapped(byte[] dataReceived) {
-
-    }
-
-    @Override
-    public void possumFaceCoordsReceived(int[] xCoords, int[] yCoords) {
-    }*/
-
     private class MyPagerAdapter extends FragmentPagerAdapter {
-        private SparseArray<Fragment> myPages = new SparseArray<>();
+        private SparseArray<TrustFragment> myPages = new SparseArray<>();
+
         MyPagerAdapter(FragmentManager fm) {
             super(fm);
         }
 
         @Override
-        public Fragment getItem(int position) {
+        public TrustFragment getItem(int position) {
             if (myPages.get(position) == null) {
                 Fragment fragment;
                 switch (position) {
                     case 0:
-                        fragment = Fragment.instantiate(getContext(), AllSensorsChartFragment.class.getName());
-                        break;
-                    case 1:
-                        fragment = Fragment.instantiate(getContext(), CameraFragment.class.getName());
+                        fragment = TrustFragment.instantiate(getContext(), AllDetectorsChartFragment.class.getName());
                         break;
                     default:
-                        fragment = Fragment.instantiate(getContext(), CombinedTrustChart.class.getName());
+                        fragment = TrustFragment.instantiate(getContext(), CombinedTrustChart.class.getName());
                 }
-                myPages.put(position, fragment);
+                myPages.put(position, (TrustFragment) fragment);
             }
             return myPages.get(position);
         }
 
         @Override
         public int getCount() {
-            return 3;
+            return 2;
         }
     }
 }

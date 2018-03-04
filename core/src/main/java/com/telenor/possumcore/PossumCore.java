@@ -15,6 +15,7 @@ import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.Constants;
 import com.telenor.possumcore.constants.CoreStatus;
 import com.telenor.possumcore.detectors.ImageDetector;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,15 +31,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * It handles the detectors, starting them, stopping them and the subclasses handles whatever is
  * done with the data.
  */
-public abstract class PossumCore {
+public abstract class PossumCore implements IDetectorChange {
     private Set<AbstractDetector> detectors = new HashSet<>();
     private Handler handler = new Handler();
     private AtomicInteger status = new AtomicInteger(CoreStatus.Idle);
+    private String userId;
     private ExecutorService executorService = Executors.newCachedThreadPool(runnable -> {
         Thread thread = new Thread(runnable, "PossumProcessing");
         thread.setPriority(Thread.MIN_PRIORITY);
         return thread;
     });
+    private List<IDetectorChange> changeListeners = new ArrayList<>();
     private AtomicBoolean deniedCamera = new AtomicBoolean(false);
     private long timeOut = 3000; // Default timeOut
     private static final String tag = PossumCore.class.getName();
@@ -53,6 +56,7 @@ public abstract class PossumCore {
         addAllDetectors(context);
         for (AbstractDetector detector : detectors)
             detector.setUniqueUserId(uniqueUserId);
+        userId = uniqueUserId;
     }
 
     /**
@@ -77,7 +81,7 @@ public abstract class PossumCore {
      * listening, else true
      */
     public boolean startListening() {
-        if (status.get() != CoreStatus.Idle || detectors == null || detectors.size() == 0)
+        if (status.get() == CoreStatus.Running || detectors == null || detectors.size() == 0)
             return false;
 
         for (AbstractDetector detector : detectors) {
@@ -85,7 +89,7 @@ public abstract class PossumCore {
                 continue;
             executorService.submit(detector);
         }
-        Log.d(tag, "AP:Start listening");
+        Log.d(tag, "AP: Start listening");
         status.set(CoreStatus.Running);
         if (timeOut > 0)
             handler.postDelayed(this::stopListening, timeOut);
@@ -128,6 +132,15 @@ public abstract class PossumCore {
     public void onPause() {
         if (status.get() == CoreStatus.Running) {
             // TODO: Pause detectors
+            stopListening();
+            // setStatus must be after stopListening, since that will set it to idle
+            setStatus(CoreStatus.Paused);
+        }
+    }
+
+    public void detectorChanged(AbstractDetector detector) {
+        for (IDetectorChange listener : changeListeners) {
+            listener.detectorChanged(detector);
         }
     }
 
@@ -135,13 +148,15 @@ public abstract class PossumCore {
      * Handles an effective restart of eventual paused app due to interruption in progress
      */
     public void onResume() {
-        if (status.get() == CoreStatus.Running) {
+        if (status.get() == CoreStatus.Paused) {
             // TODO: Resume detectors
+            startListening(); // TODO: This will delete all previous data. How to handle this?
         }
     }
 
     /**
      * A handy way to get the version of the possumCore library
+     *
      * @param context a valid android context
      * @return a string representing the current version of the library
      */
@@ -191,7 +206,7 @@ public abstract class PossumCore {
         deniedCamera.set(false);
         if (isListening()) {
             for (AbstractDetector detector : detectors) {
-                if (detector instanceof ImageDetector ) {
+                if (detector instanceof ImageDetector) {
                     // Submit if already denied
                     executorService.submit(detector);
                 }
@@ -275,8 +290,26 @@ public abstract class PossumCore {
                 detector.terminate();
             }
             status.set(CoreStatus.Idle);
-            Log.d(tag, "AP:Stop listening");
+            Log.i(tag, "AP: Stop Listening");
         }
+    }
+
+    /**
+     * Adds a listener for changes to detectors
+     *
+     * @param listener a listener for changes
+     */
+    public void addChangeListener(IDetectorChange listener) {
+        changeListeners.add(listener);
+    }
+
+    /**
+     * Removes a listener for changes to detectors
+     *
+     * @param listener a listener for changes
+     */
+    public void removeChangeListener(IDetectorChange listener) {
+        changeListeners.remove(listener);
     }
 
     /**
@@ -308,5 +341,27 @@ public abstract class PossumCore {
             if (detector.detectorType() == detectorType) return detector;
         }
         return null;
+    }
+
+    /**
+     * Lets you change which user id you are currently handling, changing all detectors to
+     * utilize the new userId. Does NOT validate in any way the new user id
+     *
+     * @param newUserId a new user id to utilize for gathering/authenticating
+     */
+    public void changeUserId(String newUserId) {
+        for (AbstractDetector detector : detectors) {
+            detector.setUniqueUserId(newUserId);
+        }
+        userId = newUserId;
+    }
+
+    /**
+     * Quick way to return the current user using the sdk
+     *
+     * @return the user id being used
+     */
+    protected String userId() {
+        return userId;
     }
 }

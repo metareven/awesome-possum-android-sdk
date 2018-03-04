@@ -11,7 +11,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.telenor.possumauth.example.AppConstants;
-import com.telenor.possumauth.example.R;
+import com.telenor.possumauth.example.Messaging;
+import com.telenor.possumauth.example.Send;
 
 import java.util.Locale;
 
@@ -23,7 +24,6 @@ public class TrustButton extends RelativeLayout {
     private int timePassedInMillis;
     private Handler authHandler = new Handler(Looper.getMainLooper());
     private Runnable authRunnable;
-    private static final String tag = TrustButton.class.getName();
 
     public TrustButton(Context context) {
         super(context);
@@ -40,18 +40,16 @@ public class TrustButton extends RelativeLayout {
         init(context);
     }
 
-    public void setRunnableWithId(final String id) {
-        authRunnable = new Runnable() {
-            @Override
-            public void run() {
-                timePassedInMillis += authInterval();
-                if (timePassedInMillis >= authTime()) {
-                    timePassedInMillis = 0;
-                } else {
-                    authHandler.postDelayed(authRunnable, authInterval());
-                }
-                trustWheel.setProgress(timePassedInMillis);
+    public void createRunnable() {
+        authRunnable = () -> {
+            timePassedInMillis += authInterval();
+            if (timePassedInMillis >= authTime()) {
+                timePassedInMillis = 0;
+                Send.message(getContext(), Messaging.AUTH_VERIFY);
+            } else {
+                authHandler.postDelayed(authRunnable, authInterval());
             }
+            trustWheel.setProgress(timePassedInMillis);
         };
     }
 
@@ -111,29 +109,21 @@ public class TrustButton extends RelativeLayout {
         trustWheel.setTrustScore(score);
     }
 
-    public void authenticate(String id) {
-        setRunnableWithId(id);
-        //AwesomePossum.authenticate(getContext(), id, getContext().getString(R.string.authenticateUrl), getContext().getString(R.string.apiKey), true);
+    public void authenticate() {
+        createRunnable();
         timePassedInMillis = 0;
         trustWheel.setProgress(0);
         authenticating = true;
         authHandler.removeCallbacks(authRunnable);
         authHandler.postDelayed(authRunnable, authInterval());
-        //Send.messageIntent(getContext(), Messaging.GATHERING, null);
     }
 
     public void stopAuthenticate() {
         if (authenticating) {
-            //AwesomePossum.stopListening(getContext());
             timePassedInMillis = 0;
             trustWheel.setProgress(0);
             authHandler.removeCallbacks(authRunnable);
             authenticating = false;
-            //Send.messageIntent(getContext(), Messaging.AUTH_STOP, null);
         }
-    }
-
-    public boolean isAuthenticating() {
-        return authenticating;
     }
 }

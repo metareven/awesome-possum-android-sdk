@@ -9,6 +9,8 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 
+import com.telenor.possumcore.interfaces.IDetectorChange;
+
 /***
  * AbstractSensorDetector class that handles all detecting of sensor changes from the android
  * sensor manager. Note that OnSensorChanged is NOT implemented here, it will need to be
@@ -30,8 +32,8 @@ public abstract class AbstractSensorDetector extends AbstractDetector implements
      * @param context a valid android context
      * @param sensorType the sensorType you want to listen to, found by Sensor.TYPE
      */
-    public AbstractSensorDetector(@NonNull Context context, int sensorType) {
-        super(context);
+    public AbstractSensorDetector(@NonNull Context context, int sensorType, IDetectorChange listener) {
+        super(context, listener);
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager == null)
             return;

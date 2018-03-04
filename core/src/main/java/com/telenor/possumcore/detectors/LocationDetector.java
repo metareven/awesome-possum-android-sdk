@@ -14,6 +14,7 @@ import android.support.annotation.NonNull;
 import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractReceiverDetector;
 import com.telenor.possumcore.constants.DetectorType;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 
 /**
  * Retrieves locational information based on network or gps to pinpoint your whereabouts in
@@ -26,7 +27,10 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
     private static final long maxScanTime = 60*1000;
 
     public LocationDetector(@NonNull Context context) {
-        super(context);
+        this(context, null);
+    }
+    public LocationDetector(@NonNull Context context, IDetectorChange listener) {
+        super(context, listener);
         addFilterAction(LocationManager.PROVIDERS_CHANGED_ACTION);
         locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         locationHandler = getHandler();

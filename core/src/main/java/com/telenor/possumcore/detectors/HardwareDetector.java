@@ -3,11 +3,13 @@ package com.telenor.possumcore.detectors;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.support.annotation.NonNull;
 
 import com.google.gson.JsonArray;
 import com.telenor.possumcore.PossumCore;
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.DetectorType;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,8 +21,11 @@ import java.util.List;
  */
 public class HardwareDetector extends AbstractDetector {
     private static final String permissions = "permissions";
-    public HardwareDetector(Context context) {
-        super(context);
+    public HardwareDetector(@NonNull Context context) {
+        this(context, null);
+    }
+    public HardwareDetector(@NonNull Context context, IDetectorChange listener) {
+        super(context, listener);
         createDataSet(permissions);
     }
 

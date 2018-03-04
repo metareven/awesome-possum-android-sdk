@@ -7,6 +7,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.google.gson.JsonArray;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 
 import net.danlew.android.joda.JodaTimeAndroid;
 
@@ -28,14 +29,16 @@ public abstract class AbstractDetector implements Runnable {
     protected Map<String, List<JsonArray>> dataStored = new HashMap<>();
     protected static final String tag = AbstractDetector.class.getName();
     protected static final String defaultSet = "default";
+    private IDetectorChange changeListener;
 
     /**
      * Constructor for all detectors. Initializes a basic detector
      *
      * @param context a valid android context
      */
-    public AbstractDetector(Context context) {
+    public AbstractDetector(Context context, IDetectorChange listener) {
         if (context == null) throw new IllegalArgumentException("Missing context");
+        changeListener = listener;
         JodaTimeAndroid.init(context);
         createDataSet(defaultSet);
         this.context = context.getApplicationContext();
@@ -129,7 +132,9 @@ public abstract class AbstractDetector implements Runnable {
      * otherwise
      */
     public void detectorStatusChanged() {
-        // TODO: Implement pattern for status change listening
+        if (changeListener != null) {
+            changeListener.detectorChanged(this);
+        }
     }
 
     @Override
@@ -141,6 +146,7 @@ public abstract class AbstractDetector implements Runnable {
 
     /**
      * Retrieves a given dataSet
+     *
      * @param dataSet the name of the dataSet
      * @return a jsonArray containing the data or null if dataSet is not found
      */
@@ -188,7 +194,7 @@ public abstract class AbstractDetector implements Runnable {
      * Handles writing data from detector to an outputStream. Note atm it only stores to internal
      * memory. Overridden methods will handle the rest
      *
-         * @param data the data you want to write in the form of a jsonArray
+     * @param data the data you want to write in the form of a jsonArray
      */
     protected void streamData(JsonArray data) {
         streamData(data, defaultSet);
@@ -217,8 +223,8 @@ public abstract class AbstractDetector implements Runnable {
      * Method for checking whether to use extra power and time for detailed scan (like gps scans,
      * bluetooth and other time consuming scans)
      *
-     * @return  true if available, false if not. Note should be overridden if desired only. Will
-     *          consume more power and time
+     * @return true if available, false if not. Note should be overridden if desired only. Will
+     * consume more power and time
      */
     protected boolean isLongScanDoable() {
         return false;
@@ -233,5 +239,18 @@ public abstract class AbstractDetector implements Runnable {
      * Final cleanup when Awesome Possum is completely done. Only necessary for some detectors
      */
     public void cleanUp() {
+    }
+
+    /**
+     * Gives the detectors stored data as a restful json object
+     *
+     * @return a jsonArray for all the data
+     */
+    public JsonArray jsonData(String dataSet) {
+        JsonArray outputArr = new JsonArray();
+        for (JsonArray arr : dataStored.get(dataSet)) {
+            outputArr.add(arr);
+        }
+        return outputArr;
     }
 }

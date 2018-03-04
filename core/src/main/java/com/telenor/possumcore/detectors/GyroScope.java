@@ -9,13 +9,17 @@ import com.google.gson.JsonArray;
 import com.telenor.possumcore.R;
 import com.telenor.possumcore.abstractdetectors.AbstractSensorDetector;
 import com.telenor.possumcore.constants.DetectorType;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 
 /**
  * Detects changes in the gyroscope, in effect how the phone is held/lies
  */
 public class GyroScope extends AbstractSensorDetector {
     public GyroScope(@NonNull Context context) {
-        super(context,Sensor.TYPE_GYROSCOPE);
+        this(context, null);
+    }
+    public GyroScope(@NonNull Context context, IDetectorChange listener) {
+        super(context,Sensor.TYPE_GYROSCOPE, listener);
     }
 
     @Override

@@ -17,6 +17,7 @@ import android.support.annotation.RequiresApi;
 import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractReceiverDetector;
 import com.telenor.possumcore.constants.DetectorType;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 
 /**
  * Uses bonded bluetooth devices to see if you are close to your environment as well as
@@ -25,7 +26,7 @@ import com.telenor.possumcore.constants.DetectorType;
 public class BluetoothDetector extends AbstractReceiverDetector {
     private BluetoothAdapter bluetoothAdapter;
     private Handler handler = new Handler();
-    private static final String scanDataSet = "scanSet";
+    private static final String scanDataSet = "bluetooth_scan";
     private static final long maxScanTime = 12000; // 12 seconds is maximum scan time
     private static final int[] allStates = {BluetoothProfile.STATE_CONNECTED,
                                             BluetoothProfile.STATE_DISCONNECTED,
@@ -34,7 +35,10 @@ public class BluetoothDetector extends AbstractReceiverDetector {
     private ScanCallback bleScanCallback;
 
     public BluetoothDetector(@NonNull Context context) {
-        super(context);
+        this(context, null);
+    }
+    public BluetoothDetector(@NonNull Context context, IDetectorChange listener) {
+        super(context, listener);
         addFilterAction(BluetoothAdapter.ACTION_STATE_CHANGED);
         addFilterAction(BluetoothDevice.ACTION_FOUND);
         receiverIsAlwaysOn();

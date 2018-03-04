@@ -20,13 +20,16 @@ import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.Landmark;
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.DetectorType;
 import com.telenor.possumcore.facedetection.FaceDetector;
 import com.telenor.possumcore.facedetection.FaceProcessor;
 import com.telenor.possumcore.facedetection.FaceTracker;
 import com.telenor.possumcore.facedetection.IFaceFound;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 import com.telenor.possumcore.neuralnetworks.TensorWeights;
 
 import org.opencv.android.OpenCVLoader;
@@ -37,9 +40,6 @@ import org.opencv.core.Point;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Vector;
 
 import static org.opencv.imgproc.Imgproc.getAffineTransform;
@@ -58,15 +58,20 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     private static final int OUTPUT_BMP_WIDTH = 96;
     private static final int OUTPUT_BMP_HEIGHT = 96;
     private boolean isProcessingFace;
-    private static final String lbpDataSet = "lbpDataSet";
-    private static final String landmarkDataSet = "landmarkDataSet";
+    private JsonParser parser;
+    private Gson gson;
+    private static final String lbpDataSet = "image_lbp";
     private static final String modelName = "tensorflow_facerecognition.pb";
 
     public ImageDetector(@NonNull Context context) {
-        super(context);
+        this(context, null);
+    }
+    public ImageDetector(@NonNull Context context, IDetectorChange listener) {
+        super(context, listener);
+        parser = new JsonParser();
+        gson = new Gson();
         setupCameraSource();
         createDataSet(lbpDataSet);
-        createDataSet(landmarkDataSet);
         try {
             tensorFlowInterface = createTensor(context.getAssets(), modelName);
             initializeOpenCV();
@@ -194,7 +199,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         }
         if (leftEye != null && rightEye != null && mouth != null) {
             isProcessingFace = true;
-//            Log.d(tag, "AP: Face found");
             PointF centroid = new PointF((rightEye.x + leftEye.x + mouth.x) / 3, (rightEye.y + leftEye.y + mouth.y) / 3);
             float diffX = 1.5f * Math.abs(leftEye.x - rightEye.x);
             RectF faceFrame = new RectF(centroid.x - diffX, centroid.y - diffX, centroid.x + diffX, centroid.y + diffX);
@@ -208,10 +212,8 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             PointF movedRightEye = new PointF(rightEye.x - faceFrame.left, rightEye.y - faceFrame.top);
             PointF movedMouth = new PointF(mouth.x - faceFrame.left, mouth.y - faceFrame.top);
 
-//            Log.d(tag, "AP: Before aligning face");
             Bitmap alignedFace = alignFace(fixedImage, movedLeftEye, movedRightEye, movedMouth);
             if (alignedFace == null) {
-//                Log.d(tag, "AP: Aligned face");
                 isProcessingFace = false;
                 return;
             }
@@ -219,22 +221,16 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             final Bitmap scaledOutput = Bitmap.createScaledBitmap(alignedFace, OUTPUT_BMP_WIDTH, OUTPUT_BMP_HEIGHT, false);
 
             long nowTimestamp = now();
+
             // Tensor weights
             streamData(tensorFlowInterface.getWeights(scaledOutput, nowTimestamp));
 
             // LBP array
             JsonArray lbpArray = new JsonArray();
             lbpArray.add(""+nowTimestamp);
-            lbpArray.add(Arrays.toString(mainLBP(scaledOutput)));
+            lbpArray.add(parser.parse(gson.toJson(mainLBP(scaledOutput))));
+            lbpArray.add(landMarks(face));
             streamData(lbpArray, lbpDataSet);
-
-            // Landmark array
-            JsonArray landMarkArray = new JsonArray();
-            landMarkArray.add(""+nowTimestamp);
-            for (String landmark : landMarks(face)) {
-                landMarkArray.add(landmark);
-            }
-            streamData(landMarkArray, landmarkDataSet);
 
             isProcessingFace = false;
         }
@@ -253,14 +249,16 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         return LBPVector(realImage, nbx, nby, bw, bh);
     }
 
-    List<String> landMarks(Face face) {
-        List<String> landmarkData = new ArrayList<>();
+    JsonArray landMarks(Face face) {
+        JsonArray landmarks = new JsonArray();
         for (Landmark landmark : face.getLandmarks()) {
-            landmarkData.add(""+ landmark.getType());
-            landmarkData.add(""+landmark.getPosition().x);
-            landmarkData.add(""+landmark.getPosition().y);
+            JsonArray landmarkSet = new JsonArray();
+            landmarkSet.add(""+ landmark.getType());
+            landmarkSet.add(""+landmark.getPosition().x);
+            landmarkSet.add(""+landmark.getPosition().y);
+            landmarks.add(landmarkSet);
         }
-        return landmarkData;
+        return landmarks;
     }
 
     // Function to convert a image to a double matrix image

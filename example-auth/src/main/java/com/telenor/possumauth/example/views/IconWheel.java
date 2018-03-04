@@ -17,11 +17,14 @@ import android.util.TypedValue;
 import android.view.View;
 
 import com.telenor.possumauth.example.R;
+import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.DetectorType;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 
-public class IconWheel extends View {
+public class IconWheel extends View implements IDetectorChange {
     private Paint offlinePaint = new Paint();
     private Paint onlinePaint = new Paint();
+    private Paint trainingPaint = new Paint();
     private static int width;
     private static int height;
     private float centerX, centerY;
@@ -31,61 +34,28 @@ public class IconWheel extends View {
 
     private SparseArray<SensorContainer> sensors = new SparseArray<>();
 
-/*    @Override
-    public void changeInCombinedTrust(float combinedTrustScore, String status, String graphName) {
-        AwesomePossum.sendDetectorStatus(getContext());
-    }
-
     @Override
-    public void changeInDetectorTrust(int detectorType, float newTrustScore, String status, String graphName) {
-        SensorContainer sensor = sensors.get(detectorType);
+    public void detectorChanged(AbstractDetector detector) {
+        SensorContainer sensor = sensors.get(detector.detectorType());
         if (sensor != null) {
-            sensor.setTraining(Float.parseFloat(status)<1);
-            sensor.invalidateIcon();
+            sensor.setAvailable(detector.isAvailable());
+            sensor.setEnabled(detector.isEnabled());
+            sensor.setTraining(false);
+        }
+
+    }
+
+    public void updateSensorTrainingStatus(int type, float trainingStatus) {
+        SensorContainer sensorContainer = sensors.get(type);
+        if (sensorContainer != null) {
+            sensorContainer.setTraining(trainingStatus < 1);
+            sensorContainer.invalidateIcon();
         }
     }
-
-    @Override
-    public void failedToAscertainTrust(Exception exception) {
-
-    }
-
-    @Override
-    public void possumMessageReceived(String msgType, String message) {
-        if (Messaging.DETECTORS_STATUS.equals(msgType)) {
-            JsonArray sensorsArray = (JsonArray) new JsonParser().parse(message);
-            for (int i = 0; i < sensorsArray.size(); i++) {
-                JsonObject sensor = sensorsArray.get(i).getAsJsonObject();
-                int type = sensor.get("type").getAsInt();
-                boolean enabled = sensor.get("isEnabled").getAsBoolean();
-                boolean available = sensor.get("isAvailable").getAsBoolean();
-                SensorContainer sensorContainer = sensors.get(type);
-                if (sensorContainer != null) {
-                    sensorContainer.setEnabled(enabled);
-                    sensorContainer.setAvailable(available);
-                    sensorContainer.invalidateIcon();
-                }
-            }
-        }
-    }
-
-    @Override
-    public void possumFaceFound(byte[] dataReceived) {
-
-    }
-
-    @Override
-    public void possumImageSnapped(byte[] dataReceived) {
-
-    }
-
-    @Override
-    public void possumFaceCoordsReceived(int[] xCoords, int[] yCoords) {
-
-    }*/
 
     private enum SensorStatus {
         RED,
+        ORANGE,
         GREEN
     }
 
@@ -133,7 +103,8 @@ public class IconWheel extends View {
         }
 
         SensorStatus sensorStatus() {
-            return (!enabled || !available || isTraining) ? SensorStatus.RED : SensorStatus.GREEN;
+            if (!enabled || !available) return SensorStatus.RED;
+            return isTraining?SensorStatus.ORANGE:SensorStatus.GREEN;
         }
 
         void updateRect() {
@@ -188,14 +159,11 @@ public class IconWheel extends View {
 
         offlinePaint.setColorFilter(new PorterDuffColorFilter(Color.RED, PorterDuff.Mode.SRC_IN));
         onlinePaint.setColorFilter(new PorterDuffColorFilter(Color.parseColor("#009900"), PorterDuff.Mode.SRC_IN));
+        trainingPaint.setColorFilter(new PorterDuffColorFilter(Color.parseColor("#FFA500"), PorterDuff.Mode.SRC_IN));
 
         iconWidth = pixelValue(30);
         iconHeight = pixelValue(30);
         hypotenuse = pixelValue(140);
-
-//        AwesomePossum.addTrustListener(getContext(), this);
-//        AwesomePossum.addMessageListener(getContext(), this);
-//        AwesomePossum.sendDetectorStatus(getContext());
     }
 
     @Override
@@ -255,6 +223,9 @@ public class IconWheel extends View {
             switch (sensor.sensorStatus()) {
                 case GREEN:
                     paint = onlinePaint;
+                    break;
+                case ORANGE:
+                    paint = trainingPaint;
                     break;
                 default:
                     paint = offlinePaint;

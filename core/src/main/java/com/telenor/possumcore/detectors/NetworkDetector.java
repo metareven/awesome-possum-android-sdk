@@ -10,6 +10,7 @@ import android.support.annotation.NonNull;
 import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractReceiverDetector;
 import com.telenor.possumcore.constants.DetectorType;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 
 /**
  * Scans for your nearby networks in order to check whether your time and place
@@ -21,7 +22,11 @@ public class NetworkDetector extends AbstractReceiverDetector {
     private int wifiState = WifiManager.WIFI_STATE_DISABLED;
 
     public NetworkDetector(@NonNull Context context) {
-        super(context);
+        this(context, null);
+    }
+
+    public NetworkDetector(@NonNull Context context, IDetectorChange listener) {
+        super(context, listener);
         addFilterAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         ConnectivityManager mng = (ConnectivityManager)context.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -58,7 +63,8 @@ public class NetworkDetector extends AbstractReceiverDetector {
             data.add(""+now());
             data.add(scanResult.BSSID);
             data.add(""+scanResult.level);
-            data.add(""+isConnectedToNetwork(scanResult.BSSID));
+            // TODO: Reimplement isConnectedToNetwork
+//            data.add(""+isConnectedToNetwork(scanResult.BSSID));
             streamData(data);
         }
     }

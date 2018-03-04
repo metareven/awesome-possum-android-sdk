@@ -33,7 +33,7 @@ public class CombinedTrustChart extends TrustFragment {
     public void onViewCreated(View view, Bundle bundle) {
         super.onViewCreated(view, bundle);
         LineData lineData = new LineData();
-        lineChart = (LineChart) view.findViewById(R.id.lineChart);
+        lineChart = view.findViewById(R.id.lineChart);
         lineChart.setTouchEnabled(false);
         lineChart.setScaleEnabled(false);
         lineChart.setPinchZoom(false);
@@ -77,18 +77,13 @@ public class CombinedTrustChart extends TrustFragment {
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-//        updateSensors(AwesomePossum.latestTrustScore());
-    }
-
-    public void updateSensors(JsonObject object) {
-//        changeInCombinedTrust(DetectorType.Accelerometer, object.get("accelerometer").getAsJsonArray());
+    public void newTrustScore(String graphName, float newScore) {
+        addEntry(newScore, graphName);
     }
 
     @Override
-    public void changeInCombinedTrust(final float combinedTrustScore, final String status, final String graphName) {
-        addEntry(combinedTrustScore, graphName);
+    public void detectorValues(String detectorName, String dataSetName, float score, float training) {
+
     }
 
     private void addEntry(float combinedTrustScore, String graphName) {

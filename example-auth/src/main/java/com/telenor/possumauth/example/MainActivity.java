@@ -3,6 +3,7 @@ package com.telenor.possumauth.example;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -12,30 +13,113 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.telenor.possumauth.PossumAuth;
 import com.telenor.possumauth.example.dialogs.DefineIdDialog;
 import com.telenor.possumauth.example.dialogs.GraphSelectionDialog;
 import com.telenor.possumauth.example.fragments.MainFragment;
+import com.telenor.possumauth.example.fragments.TrustFragment;
+import com.telenor.possumauth.interfaces.IAuthCompleted;
 
-public class MainActivity extends AppCompatActivity {//} implements IModelLoaded {
+import java.util.Locale;
+import java.util.Map;
+
+public class MainActivity extends AppCompatActivity implements IAuthCompleted {
     private static final String tag = MainActivity.class.getName();
     private SharedPreferences preferences;
     private PossumAuth possumAuth;
+    private JsonParser parser;
 
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         setContentView(R.layout.activity_main);
-        possumAuth = new PossumAuth(getApplicationContext(), "userId", "uploadUrl");
-        preferences = getSharedPreferences("dummyPrefs", MODE_PRIVATE);
+        parser = new JsonParser();
+        preferences = getSharedPreferences(AppConstants.SHARED_PREFERENCES, MODE_PRIVATE);
+        String userId = myId();
+        possumAuth = new PossumAuth(getApplicationContext(), userId, getString(R.string.authentication_url), getString(R.string.apiKey));
+        possumAuth.addAuthListener(this);
+        possumAuth.setTimeOut(0); // Timeout is handled by client
         showFragment(MainFragment.class);
+    }
+
+    @Override
+    public void messageReturned(String message, Exception e) {
+        if (e == null) {
+            JsonObject msgObj = (JsonObject) parser.parse(message);
+            updateSharedPreferences(msgObj);
+            JsonObject sensors = msgObj.getAsJsonObject("sensors");
+            JsonArray trustScores = msgObj.getAsJsonArray("trustscore");
+            for (JsonElement el : trustScores) {
+                JsonObject obj = el.getAsJsonObject();
+                String graphName = obj.get("name").getAsString();
+                float score = obj.get("score").getAsFloat();
+                ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).newTrustScore(graphName, score);
+            }
+            Log.i(tag, "AP: Msg:" + message);
+            for (Map.Entry<String, JsonElement> entry : sensors.entrySet()) {
+                String detectorName = entry.getKey();
+                JsonArray arr = entry.getValue().getAsJsonArray();
+                for (JsonElement el : arr) {
+                    JsonObject graphObj = el.getAsJsonObject();
+                    String dataSetName = graphObj.get("name").getAsString();
+                    String graphName = String.format(Locale.US, "%s:%s", detectorName.substring(0, 3), dataSetName.substring(0, 3));
+                    ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).detectorValues(detectorName, dataSetName, graphObj.get("score").getAsFloat(), graphObj.get("status").getAsFloat());
+                    // TODO: Ignore unused sensors? (Bluetooth, Position, Sound)
+                }
+            }
+        } else {
+            Log.i(tag, "AP: Error when auth:", e);
+            // Posts error message
+            ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).newTrustScore(null, -1);
+        }
+        Send.message(getApplicationContext(), Messaging.AUTH_RETURNED);
+    }
+
+    private void updateSharedPreferences(JsonObject object) {
+        SharedPreferences prefs = getSharedPreferences(AppConstants.SHARED_PREFERENCES, MODE_PRIVATE);
+        JsonArray alreadyStoredData = (JsonArray) parser.parse(prefs.getString("StoredGraphDisplay", "[]"));
+        SharedPreferences.Editor editor = prefs.edit();
+        JsonObject sensorsObject = object.getAsJsonObject("sensors");
+        JsonArray storedData = new JsonArray();
+
+        for (Map.Entry<String, JsonElement> entry : sensorsObject.entrySet()) {
+            String detectorName = entry.getKey();
+            JsonArray arr = entry.getValue().getAsJsonArray();
+            for (JsonElement el : arr) {
+                JsonObject graphObj = el.getAsJsonObject();
+                String name = graphObj.get("name").getAsString();
+                String fullName = String.format("%s:%s", detectorName, name);
+                boolean alreadyExists = false;
+                for (JsonElement elStored : alreadyStoredData) {
+                    JsonObject objStored = elStored.getAsJsonObject();
+                    if (fullName.equals(objStored.get("name").getAsString())) {
+                        alreadyExists = true;
+                        storedData.add(objStored);
+                        break;
+                    }
+                }
+                if (!alreadyExists) {
+                    JsonObject graph = new JsonObject();
+                    graph.addProperty("name", fullName);
+                    graph.addProperty("isShown", true);
+                    storedData.add(graph);
+                }
+            }
+        }
+        editor.putString("StoredGraphDisplay", storedData.toString());
+        editor.apply();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         possumAuth.stopListening();
-        Log.i(tag, "Terminating");
+        possumAuth.removeAuthListener(this);
+        Log.i(tag, "AP: Terminating");
     }
 
     public PossumAuth possumAuth() {
@@ -67,13 +151,11 @@ public class MainActivity extends AppCompatActivity {//} implements IModelLoaded
     }
 
     public void defineIdDialog(MenuItem item) {
-        DefineIdDialog dialog = new DefineIdDialog();
-        dialog.show(getSupportFragmentManager(), DefineIdDialog.class.getName());
+        new DefineIdDialog().show(getSupportFragmentManager(), DefineIdDialog.class.getName());
     }
 
     public void setShownGraphs(MenuItem item) {
-        GraphSelectionDialog dialog = new GraphSelectionDialog();
-        dialog.show(getSupportFragmentManager(), GraphSelectionDialog.class.getName());
+        new GraphSelectionDialog().show(getSupportFragmentManager(), GraphSelectionDialog.class.getName());
     }
 
     @Override
@@ -86,6 +168,12 @@ public class MainActivity extends AppCompatActivity {//} implements IModelLoaded
     public void onResume() {
         super.onResume();
         possumAuth.onResume();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        possumAuth.onConfigurationChanged(newConfig);
     }
 
     @Override

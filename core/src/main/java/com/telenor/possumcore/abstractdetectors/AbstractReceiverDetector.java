@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.annotation.NonNull;
 
+import com.telenor.possumcore.interfaces.IDetectorChange;
+
 /**
  * Abstract receiver detector, capable of receiving intents from a given intentFilter. Will send
  * all intents registered to filter in an abstract onReceiveData method. Handles registering and
@@ -17,8 +19,8 @@ public abstract class AbstractReceiverDetector extends AbstractDetector {
     private boolean isAlwaysOn;
     private IntentFilter intentFilter = new IntentFilter();
 
-    public AbstractReceiverDetector(@NonNull Context context) {
-        super(context);
+    public AbstractReceiverDetector(@NonNull Context context, IDetectorChange listener) {
+        super(context, listener);
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {

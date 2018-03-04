@@ -5,6 +5,8 @@ properties.load(project.rootProject.file('local.properties').newDataInputStream(
 
 if (properties.getProperty("authentication_url") == null)
     throw new GradleException("Missing property 'authentication_url' from local.properties")
+if (properties.getProperty("apiKey") == null)
+    throw new GradleException("Missing property 'apiKey' from local.properties")
 
 android {
     compileSdkVersion 26
@@ -20,6 +22,7 @@ android {
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         resValue "string", "authentication_url", properties["authentication_url"]
+        resValue "string", "apiKey", properties["apiKey"]
     }
 
     buildTypes {

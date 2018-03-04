@@ -9,10 +9,12 @@ import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 
 import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.DetectorType;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 
 import org.joda.time.DateTime;
 
@@ -76,13 +78,16 @@ public class AmbientSoundDetector extends AbstractDetector {
      */
     private final static int fftSize = frameLength;
 
+    public AmbientSoundDetector(@NonNull Context context) {
+        this(context, null);
+    }
     /**
      * Constructor for all ambient sound detectors.
      *
      * @param context a valid android context
      */
-    public AmbientSoundDetector(Context context) {
-        super(context);
+    public AmbientSoundDetector(@NonNull Context context, IDetectorChange listener) {
+        super(context, listener);
         // TODO: Clean up class and refactor
         recordingSamples = (int)(sampleRate() * (maxListeningTime / 1000));
         bufferSize = AudioTrack.getMinBufferSize(sampleRate(), AudioFormat.CHANNEL_OUT_MONO, audioEncoding());
