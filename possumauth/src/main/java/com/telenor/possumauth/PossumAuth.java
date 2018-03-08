@@ -14,7 +14,6 @@ import com.telenor.possumcore.detectors.Accelerometer;
 import com.telenor.possumcore.detectors.AmbientSoundDetector;
 import com.telenor.possumcore.detectors.BluetoothDetector;
 import com.telenor.possumcore.detectors.GyroScope;
-import com.telenor.possumcore.detectors.HardwareDetector;
 import com.telenor.possumcore.detectors.ImageDetector;
 import com.telenor.possumcore.detectors.LocationDetector;
 import com.telenor.possumcore.detectors.NetworkDetector;

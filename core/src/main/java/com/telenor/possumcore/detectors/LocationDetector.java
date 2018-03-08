@@ -146,7 +146,7 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
         if (location == null) return;
         JsonArray array = new JsonArray();
         array.add("" + now());
-        array.add("" + location.getTime());
+//        array.add("" + location.getTime());
         array.add("" + location.getLatitude());
         array.add("" + location.getLongitude());
         array.add("" + location.getAltitude());

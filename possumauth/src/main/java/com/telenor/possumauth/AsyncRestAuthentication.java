@@ -68,7 +68,7 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
             os.write(data);
             int responseCode = urlConnection.getResponseCode();
             String responseMessage = urlConnection.getResponseMessage();
-            Log.d(tag, responseCode + " -> " + responseMessage);
+            Log.d(tag, "AP: "+responseCode + " -> " + responseMessage);
             is = urlConnection.getInputStream();
             StringBuilder output = new StringBuilder();
             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
@@ -78,14 +78,14 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
             successMessage = output.toString();
             Log.i(tag, "AP: Received upload - time spent:"+(System.currentTimeMillis()-startTime)+", bytes uploaded:"+data.length);
         } catch (Exception e) {
-            Log.e(tag, "Ex:", e);
+            Log.e(tag, "AP: Ex:", e);
             exception = e;
         } finally {
             if (os != null) {
                 try {
                     os.close();
                 } catch (IOException e) {
-                    Log.e(tag, "Failed to close output stream:", e);
+                    Log.e(tag, "AP: Failed to close output stream:", e);
                     exception = e;
                 }
             }
@@ -93,7 +93,7 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
                 try {
                     is.close();
                 } catch (IOException e) {
-                    Log.e(tag, "Failed to close input stream:", e);
+                    Log.e(tag, "AP: Failed to close input stream:", e);
                     exception = e;
                 }
             }
@@ -103,12 +103,6 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
 
     @Override
     public void onPostExecute(Exception exception) {
-        if (exception == null) {
-            listener.messageReturned(successMessage, null);
-            Log.i(tag, successMessage);
-        } else {
-            listener.messageReturned(null, exception);
-            Log.i(tag, "Failed somehow:",exception);
-        }
+        listener.messageReturned(successMessage, exception);
     }
 }

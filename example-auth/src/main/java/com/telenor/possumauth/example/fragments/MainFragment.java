@@ -136,6 +136,7 @@ public class MainFragment extends TrustFragment {
                 adapter.myPages.get(0).newTrustScore(graphName, newScore);
                 adapter.myPages.get(1).newTrustScore(graphName, newScore);
             } else {
+                startedAuth = false;
                 handler.post(() -> trustButton.setTrustScore(0, "Failed"));
             }
         }

@@ -21,7 +21,7 @@ public abstract class AbstractSensorDetector extends AbstractDetector implements
     private SensorManager sensorManager;
     private Sensor sensor;
     private int presentAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_HIGH;
-    private static final int MIN_INTERVAL_MILLI = 50;
+    private static final int MIN_INTERVAL_MILLI = 35;
     private static final int MIN_INTERVAL_MICRO = MIN_INTERVAL_MILLI * 1000;
     private static final long MIN_INTERVAL_NANO = MIN_INTERVAL_MICRO * 1000;
     private long lastRecord;

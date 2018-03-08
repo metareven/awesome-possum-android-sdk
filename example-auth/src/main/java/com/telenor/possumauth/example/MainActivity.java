@@ -5,6 +5,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AlertDialog;
@@ -12,6 +13,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.FrameLayout;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -24,6 +26,7 @@ import com.telenor.possumauth.example.fragments.MainFragment;
 import com.telenor.possumauth.example.fragments.TrustFragment;
 import com.telenor.possumauth.interfaces.IAuthCompleted;
 
+import java.io.FileNotFoundException;
 import java.util.Locale;
 import java.util.Map;
 
@@ -32,11 +35,13 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
     private SharedPreferences preferences;
     private PossumAuth possumAuth;
     private JsonParser parser;
+    private FrameLayout frameLayout;
 
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         setContentView(R.layout.activity_main);
+        frameLayout = findViewById(R.id.mainFragment);
         parser = new JsonParser();
         preferences = getSharedPreferences(AppConstants.SHARED_PREFERENCES, MODE_PRIVATE);
         String userId = myId();
@@ -66,17 +71,20 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
                 for (JsonElement el : arr) {
                     JsonObject graphObj = el.getAsJsonObject();
                     String dataSetName = graphObj.get("name").getAsString();
-                    String graphName = String.format(Locale.US, "%s:%s", detectorName.substring(0, 3), dataSetName.substring(0, 3));
                     ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).detectorValues(detectorName, dataSetName, graphObj.get("score").getAsFloat(), graphObj.get("status").getAsFloat());
-                    // TODO: Ignore unused sensors? (Bluetooth, Position, Sound)
                 }
             }
+            Send.message(getApplicationContext(), Messaging.AUTH_RETURNED);
         } else {
             Log.i(tag, "AP: Error when auth:", e);
             // Posts error message
             ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).newTrustScore(null, -1);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(e.getMessage());
+            builder.setMessage(String.format(Locale.US,"Msg:%s\nStack:%s", message, e.fillInStackTrace()));
+            builder.create().show();
+            Send.message(getApplicationContext(), Messaging.AUTH_TERMINATE);
         }
-        Send.message(getApplicationContext(), Messaging.AUTH_RETURNED);
     }
 
     private void updateSharedPreferences(JsonObject object) {

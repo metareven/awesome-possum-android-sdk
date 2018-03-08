@@ -3,10 +3,10 @@ package com.telenor.possumcore.detectors;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
+import android.os.Build;
 import android.support.annotation.NonNull;
 
 import com.google.gson.JsonArray;
-import com.telenor.possumcore.R;
 import com.telenor.possumcore.abstractdetectors.AbstractSensorDetector;
 import com.telenor.possumcore.constants.DetectorType;
 import com.telenor.possumcore.interfaces.IDetectorChange;
@@ -19,7 +19,7 @@ public class GyroScope extends AbstractSensorDetector {
         this(context, null);
     }
     public GyroScope(@NonNull Context context, IDetectorChange listener) {
-        super(context,Sensor.TYPE_GYROSCOPE, listener);
+        super(context, Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2?Sensor.TYPE_GYROSCOPE_UNCALIBRATED:Sensor.TYPE_GYROSCOPE, listener);
     }
 
     @Override
