@@ -9,6 +9,7 @@ import android.os.Build;
 
 import com.telenor.possumcore.BuildConfig;
 import com.telenor.possumcore.TestUtils;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -43,6 +44,8 @@ public class AbstractSensorDetectorTest {
     private Sensor mockedSensor;
     @Mock
     private SensorManager mockedSensorManager;
+    @Mock
+    private IDetectorChange detectorChange;
 
     @Before
     public void setUp() throws Exception {
@@ -54,7 +57,7 @@ public class AbstractSensorDetectorTest {
         Assert.assertNotNull(sensorManager);
         ShadowSensorManager shadowSensorManager = Shadows.shadowOf(sensorManager);
         shadowSensorManager.addSensor(Sensor.TYPE_ACCELEROMETER, mockedSensor);
-        abstractSensorDetector = new AbstractSensorDetector(RuntimeEnvironment.application, Sensor.TYPE_ACCELEROMETER) {
+        abstractSensorDetector = new AbstractSensorDetector(RuntimeEnvironment.application, Sensor.TYPE_ACCELEROMETER, detectorChange) {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
 
@@ -90,7 +93,7 @@ public class AbstractSensorDetectorTest {
     @Test
     public void testUnableToFindSensorManager() throws Exception {
         when(mockedContext.getSystemService(Context.SENSOR_SERVICE)).thenReturn(null);
-        abstractSensorDetector = new AbstractSensorDetector(mockedContext, Sensor.TYPE_ACCELEROMETER) {
+        abstractSensorDetector = new AbstractSensorDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, detectorChange) {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
 
@@ -112,7 +115,7 @@ public class AbstractSensorDetectorTest {
     @Test
     public void testUnableToFindSensor() throws Exception {
         when(mockedSensorManager.getDefaultSensor(anyInt())).thenReturn(null);
-        abstractSensorDetector = new AbstractSensorDetector(mockedContext, Sensor.TYPE_ACCELEROMETER) {
+        abstractSensorDetector = new AbstractSensorDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, detectorChange) {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
 
@@ -146,7 +149,7 @@ public class AbstractSensorDetectorTest {
 
     @Test
     public void testRunRegistersListener() throws Exception {
-        abstractSensorDetector = new AbstractSensorDetector(mockedContext, Sensor.TYPE_ACCELEROMETER) {
+        abstractSensorDetector = new AbstractSensorDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, detectorChange) {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
 
@@ -168,8 +171,15 @@ public class AbstractSensorDetectorTest {
     }
 
     @Test
+    public void testDetectorChangeStatus() throws Exception {
+        verify(detectorChange, times(0)).detectorChanged(any(AbstractSensorDetector.class));
+        abstractSensorDetector.detectorStatusChanged();
+        verify(detectorChange, times(1)).detectorChanged(any(AbstractSensorDetector.class));
+    }
+
+    @Test
     public void testTerminateRemovesListener() throws Exception {
-        abstractSensorDetector = new AbstractSensorDetector(mockedContext, Sensor.TYPE_ACCELEROMETER) {
+        abstractSensorDetector = new AbstractSensorDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, detectorChange) {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
 

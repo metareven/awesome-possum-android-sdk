@@ -2,12 +2,14 @@ package com.telenor.possumcore.abstractdetectors;
 
 import com.google.gson.JsonArray;
 import com.telenor.possumcore.TestUtils;
+import com.telenor.possumcore.interfaces.IDetectorChange;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -22,11 +24,13 @@ import java.util.Map;
 @RunWith(RobolectricTestRunner.class)
 public class AbstractDetectorTest {
     private AbstractDetector abstractDetector;
+    private IDetectorChange detectorChange;
 
     @Before
     public void setUp() throws Exception {
         TestUtils.initializeJodaTime();
-        abstractDetector = new AbstractDetector(RuntimeEnvironment.application) {
+        detectorChange = Mockito.mock(IDetectorChange.class);
+        abstractDetector = new AbstractDetector(RuntimeEnvironment.application, detectorChange) {
             @Override
             public int detectorType() {
                 return 999;
@@ -60,7 +64,7 @@ public class AbstractDetectorTest {
     @Test
     public void testInvalidArgument() throws Exception {
         try {
-            abstractDetector = new AbstractDetector(null) {
+            abstractDetector = new AbstractDetector(null, null) {
                 @Override
                 public int detectorType() {
                     return 999;
@@ -131,7 +135,7 @@ public class AbstractDetectorTest {
 
     @Test
     public void testPermittedReturnsFalseIfNotGranted() throws Exception {
-        abstractDetector = new AbstractDetector(RuntimeEnvironment.application) {
+        abstractDetector = new AbstractDetector(RuntimeEnvironment.application, detectorChange) {
             @Override
             public int detectorType() {
                 return 999;
@@ -157,7 +161,7 @@ public class AbstractDetectorTest {
 
     @Test
     public void testPermittedReturnsTrueIfGranted() throws Exception {
-        abstractDetector = new AbstractDetector(RuntimeEnvironment.application) {
+        abstractDetector = new AbstractDetector(RuntimeEnvironment.application, detectorChange) {
             @Override
             public int detectorType() {
                 return 999;

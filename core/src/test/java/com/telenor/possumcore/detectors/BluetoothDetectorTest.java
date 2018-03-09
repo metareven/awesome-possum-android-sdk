@@ -176,7 +176,7 @@ public class BluetoothDetectorTest {
         Map<String, List<JsonArray>> dataStored = (Map<String, List<JsonArray>>)dataField.get(bluetoothDetector);
         Assert.assertEquals(2, dataStored.size());
         Assert.assertNotNull(dataStored.get("default"));
-        Assert.assertNotNull(dataStored.get("scanSet"));
+        Assert.assertNotNull(dataStored.get("bluetooth_scan"));
     }
 
     @Test
@@ -352,7 +352,7 @@ public class BluetoothDetectorTest {
         dataStoredField.setAccessible(true);
         Map<String, List<JsonArray>> dataStored = (Map<String, List<JsonArray>>)dataStoredField.get(bluetoothDetector);
         Assert.assertEquals(2, dataStored.size());
-        List<JsonArray> dataList= dataStored.get("scanSet");
+        List<JsonArray> dataList= dataStored.get("bluetooth_scan");
         Assert.assertEquals(1, dataList.size());
         JsonArray data = dataList.get(0);
         Assert.assertNotNull(data.get(0));

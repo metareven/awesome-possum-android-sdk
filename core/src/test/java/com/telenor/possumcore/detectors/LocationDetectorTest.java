@@ -185,12 +185,12 @@ public class LocationDetectorTest {
         Assert.assertEquals(1, data.get("default").size());
         JsonArray obj = data.get("default").get(0);
         Assert.assertTrue(timestamp <= obj.get(0).getAsLong());
-        Assert.assertEquals(positionTimestamp, obj.get(1).getAsLong());
-        Assert.assertEquals(10, obj.get(2).getAsFloat(), 0);
-        Assert.assertEquals(60, obj.get(3).getAsFloat(), 0);
-        Assert.assertEquals(15, obj.get(4).getAsFloat(), 0);
-        Assert.assertEquals(16, obj.get(5).getAsFloat(), 0);
-        Assert.assertEquals(LocationManager.GPS_PROVIDER, obj.get(6).getAsString());
+//        Assert.assertEquals(positionTimestamp, obj.get(1).getAsLong());
+        Assert.assertEquals(10, obj.get(1).getAsFloat(), 0);
+        Assert.assertEquals(60, obj.get(2).getAsFloat(), 0);
+        Assert.assertEquals(15, obj.get(3).getAsFloat(), 0);
+        Assert.assertEquals(16, obj.get(4).getAsFloat(), 0);
+        Assert.assertEquals(LocationManager.GPS_PROVIDER, obj.get(5).getAsString());
     }
 
     @Test

@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 
+import com.telenor.possumcore.interfaces.IDetectorChange;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -19,6 +21,7 @@ import org.robolectric.annotation.Config;
 import java.lang.reflect.Field;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -29,6 +32,7 @@ import static org.mockito.Mockito.when;
 public class AbstractReceiverDetectorTest {
     private AbstractReceiverDetector abstractReceiverDetector;
     private int counter;
+    private IDetectorChange detectorChange;
     private static final String testFilterAction = "TestFilter";
     @Mock
     private Context mockedContext;
@@ -37,8 +41,9 @@ public class AbstractReceiverDetectorTest {
         MockitoAnnotations.initMocks(this);
         when(mockedContext.getApplicationContext()).thenReturn(mockedContext);
 
+        detectorChange = mock(IDetectorChange.class);
         counter = 0;
-        abstractReceiverDetector = new AbstractReceiverDetector(RuntimeEnvironment.application) {
+        abstractReceiverDetector = new AbstractReceiverDetector(RuntimeEnvironment.application, detectorChange) {
             @Override
             protected void onReceiveData(Intent intent) {
                 counter++;
@@ -76,7 +81,7 @@ public class AbstractReceiverDetectorTest {
 
     @Test
     public void testRunRegistersReceiver() throws Exception {
-        abstractReceiverDetector = new AbstractReceiverDetector(mockedContext) {
+        abstractReceiverDetector = new AbstractReceiverDetector(mockedContext, detectorChange) {
             @Override
             protected void onReceiveData(Intent intent) {
                 counter++;
@@ -102,7 +107,7 @@ public class AbstractReceiverDetectorTest {
 
     @Test
     public void testTerminateRemovesReceiver() throws Exception {
-        abstractReceiverDetector = new AbstractReceiverDetector(mockedContext) {
+        abstractReceiverDetector = new AbstractReceiverDetector(mockedContext, detectorChange) {
             @Override
             protected void onReceiveData(Intent intent) {
                 counter++;
@@ -148,7 +153,7 @@ public class AbstractReceiverDetectorTest {
 
     @Test
     public void testCleanupUnregistersReceiver() throws Exception {
-        abstractReceiverDetector = new AbstractReceiverDetector(mockedContext) {
+        abstractReceiverDetector = new AbstractReceiverDetector(mockedContext, detectorChange) {
             @Override
             protected void onReceiveData(Intent intent) {
 
@@ -194,8 +199,15 @@ public class AbstractReceiverDetectorTest {
     }
 
     @Test
+    public void testDetectorChanges() throws Exception {
+        verify(detectorChange, times(0)).detectorChanged(any(AbstractReceiverDetector.class));
+        abstractReceiverDetector.detectorStatusChanged();
+        verify(detectorChange, times(1)).detectorChanged(any(AbstractReceiverDetector.class));
+    }
+
+    @Test
     public void testRegistersReceiverWhenTurnedAlwaysOn() throws Exception {
-        abstractReceiverDetector = new AbstractReceiverDetector(mockedContext) {
+        abstractReceiverDetector = new AbstractReceiverDetector(mockedContext, detectorChange) {
             @Override
             protected void onReceiveData(Intent intent) {
 

@@ -60,9 +60,9 @@ public class HardwareDetectorTest {
         List<JsonArray> dataStored = datas.get("default");
         Assert.assertEquals(1, dataStored.size());
         JsonArray data = dataStored.get(0);
-        Assert.assertEquals(16, data.size());
+        Assert.assertEquals(15, data.size());
         Assert.assertEquals("HARDWARE_INFO START", data.get(0).getAsString());
-        Assert.assertEquals("HARDWARE_INFO STOP", data.get(15).getAsString());
+        Assert.assertEquals("HARDWARE_INFO STOP", data.get(14).getAsString());
     }
 
     @Config(sdk = Build.VERSION_CODES.KITKAT)
@@ -75,7 +75,7 @@ public class HardwareDetectorTest {
         List<JsonArray> dataStored = datas.get("default");
         Assert.assertEquals(1, dataStored.size());
         JsonArray data = dataStored.get(0);
-        Assert.assertEquals(16, data.size());
+        Assert.assertEquals(15, data.size());
     }
 
     @Test

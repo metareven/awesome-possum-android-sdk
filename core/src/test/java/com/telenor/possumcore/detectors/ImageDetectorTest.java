@@ -42,7 +42,6 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -128,11 +127,10 @@ public class ImageDetectorTest {
         Field dataStoredField = AbstractDetector.class.getDeclaredField("dataStored");
         dataStoredField.setAccessible(true);
         Map<String, List<JsonArray>> dataStored = (Map<String, List<JsonArray>>)dataStoredField.get(imageDetector);
-        Assert.assertEquals(3, dataStored.keySet().size());
+        Assert.assertEquals(2, dataStored.keySet().size());
         Set<String> sets = dataStored.keySet();
         Assert.assertTrue(sets.contains("default"));
-        Assert.assertTrue(sets.contains("lbpDataSet"));
-        Assert.assertTrue(sets.contains("landmarkDataSet"));
+        Assert.assertTrue(sets.contains("image_lbp"));
     }
 
     @Test
@@ -181,17 +179,20 @@ public class ImageDetectorTest {
         landmarks.add(new Landmark(new PointF(20, 14), Landmark.RIGHT_EYE));
         landmarks.add(new Landmark(new PointF(15, 21), Landmark.BOTTOM_MOUTH));
         when(mockedFace.getLandmarks()).thenReturn(landmarks);
-        List<String> output = imageDetector.landMarks(mockedFace);
-        Assert.assertEquals(9, output.size()); // 3 lines pr landmark
-        Assert.assertEquals(""+Landmark.LEFT_EYE, output.get(0));
-        Assert.assertEquals("10.0", output.get(1));
-        Assert.assertEquals("12.0", output.get(2));
-        Assert.assertEquals(""+ Landmark.RIGHT_EYE, output.get(3));
-        Assert.assertEquals("20.0", output.get(4));
-        Assert.assertEquals("14.0", output.get(5));
-        Assert.assertEquals(""+Landmark.BOTTOM_MOUTH, output.get(6));
-        Assert.assertEquals("15.0", output.get(7));
-        Assert.assertEquals("21.0", output.get(8));
+        JsonArray output = imageDetector.landMarks(mockedFace);
+        Assert.assertEquals(3, output.size()); // 3 lines pr landmark
+        JsonArray output0 = output.get(0).getAsJsonArray();
+        Assert.assertEquals(""+Landmark.LEFT_EYE, output0.get(0).getAsString());
+        Assert.assertEquals("10.0", output0.get(1).getAsString());
+        Assert.assertEquals("12.0", output0.get(2).getAsString());
+        JsonArray output1 = output.get(1).getAsJsonArray();
+        Assert.assertEquals(""+ Landmark.RIGHT_EYE, output1.get(0).getAsString());
+        Assert.assertEquals("20.0", output1.get(1).getAsString());
+        Assert.assertEquals("14.0", output1.get(2).getAsString());
+        JsonArray output2 = output.get(2).getAsJsonArray();
+        Assert.assertEquals(""+Landmark.BOTTOM_MOUTH, output2.get(0).getAsString());
+        Assert.assertEquals("15.0", output2.get(1).getAsString());
+        Assert.assertEquals("21.0", output2.get(2).getAsString());
     }
 
     @Test

@@ -249,7 +249,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         return LBPVector(realImage, nbx, nby, bw, bh);
     }
 
-    JsonArray landMarks(Face face) {
+    public JsonArray landMarks(Face face) {
         JsonArray landmarks = new JsonArray();
         for (Landmark landmark : face.getLandmarks()) {
             JsonArray landmarkSet = new JsonArray();
