@@ -100,13 +100,8 @@ public class PossumAuth extends PossumCore implements IAuthCompleted {
         JsonObject jsonData = new JsonObject();
         jsonData.addProperty("connectId", userId());
         for (AbstractDetector detector : detectors()) {
-            for (String dataSet : detector.dataStored().keySet()) {
-                if (dataSet.equals("default")) {
-                    jsonData.add(detector.detectorName(), detector.jsonData(dataSet));
-                } else {
-                    jsonData.add(dataSet, detector.jsonData(dataSet));
-                }
-            }
+            for (String dataSet : detector.dataStored().keySet())
+                jsonData.add(dataSet.equals("default")?detector.detectorName():dataSet, detector.jsonData(dataSet));
         }
         //storeToFile(jsonData);
         try {

@@ -150,8 +150,8 @@ public class AmbientSoundDetector extends AbstractDetector {
 
     @Override
     public void run() {
+        super.run();
         if (isEnabled() && isAvailable() && !isRecording()) {
-            super.run();
             short[] buffer = new short[bufferSize];
             int recordedSamples = 0;
             int readSize;

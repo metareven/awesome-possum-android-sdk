@@ -138,6 +138,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     @RequiresPermission(Manifest.permission.CAMERA)
     @Override
     public void run() {
+        super.run();
         if (isEnabled() && isAvailable()) {
             isProcessingFace = false;
             try {

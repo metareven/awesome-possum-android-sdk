@@ -34,9 +34,11 @@ import java.util.zip.ZipOutputStream;
 public class PossumGather extends PossumCore {
     private static final String tag = PossumGather.class.getName();
     private static final String amazonCatalogue = "data.30012018";
+
     /**
      * Constructor for the gather library. Creating this instance will enable you to access and
      * gather data for further upload
+     *
      * @param context a valid android context
      * @param uniqueUserId the unique user id of the person you want to gather data about
      */
@@ -49,6 +51,7 @@ public class PossumGather extends PossumCore {
      * Default abstraction of which detectors are to be included. Each subset of PossumCore needs
      * to implement this to add all detectors it desires to listen to. This can also be overridden
      * by sub-methods to reduce the number of detectors if so desired.
+     *
      * @param context a valid android context
      */
     @Override
@@ -86,6 +89,7 @@ public class PossumGather extends PossumCore {
 
     /**
      * A handy way to get the version of the possumGather library
+     *
      * @param context a valid android context
      * @return a string representing the current version of the library
      */
@@ -94,14 +98,18 @@ public class PossumGather extends PossumCore {
     }
 
 
+    /**
+     * Stops any actual listening. Only fired if it is actually listening.
+     * When fired, it will store all data registered to file after zipping it.
+     */
     @Override
     public void stopListening() {
         super.stopListening();
-        setStatus(CoreStatus.Processing);
         if (detectors().size() == 0) {
             Log.i(tag, "AP: No detectors, no file storing");
             return;
         }
+        setStatus(CoreStatus.Processing);
         Context context = detectors().iterator().next().context();
         File storedCatalogue = GatherUtils.storageCatalogue(context);
         String version = version(context);
@@ -110,7 +118,7 @@ public class PossumGather extends PossumCore {
             for (String dataSet : detector.dataStored().keySet()) {
                 try {
                     String setName = dataSet.equals("default")?detector.detectorName():dataSet;
-                    String fileName = String.format(Locale.US, "%s#%s#%s#%s#%s.zip",amazonCatalogue, version, setName, detector.getUserId(), detector.now());
+                    String fileName = String.format(Locale.US, "%s#%s#%s#%s#%s.zip", amazonCatalogue, version, setName, detector.getUserId(), detector.now());
                     List<JsonArray> data = detector.dataStored().get(dataSet);
                     if (data.size() > 0) {
                         File uploadFile = new File(storedCatalogue, fileName);
@@ -140,8 +148,10 @@ public class PossumGather extends PossumCore {
         }
         setStatus(CoreStatus.Idle);
     }
+
     /**
      * Function for determining how much data is stored as files
+     *
      * @return the bytes stored in all saved datafiles
      */
     @SuppressWarnings("unused")

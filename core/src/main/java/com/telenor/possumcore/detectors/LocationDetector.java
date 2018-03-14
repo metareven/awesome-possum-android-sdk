@@ -89,6 +89,7 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
     @Override
     public void run() {
         // Only scan if enabled and available, a last location is missing or the lastLocation is at least 10 minutes since
+        super.run();
         if (isEnabled() && isAvailable()) {
             Location lastLocation = lastLocation();
             if (lastLocation == null || lastLocation.getTime() < (now() - 10 * 60 * 1000)) {
