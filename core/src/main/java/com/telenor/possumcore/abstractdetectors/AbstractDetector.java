@@ -211,6 +211,22 @@ public abstract class AbstractDetector implements Runnable {
     }
 
     /**
+     * Handles what happens when you restart the library after a pause. Use this to restart
+     * processes like camera or microphone.
+     */
+    public void onResume() {
+
+    }
+
+    /**
+     * Handles what happens when you pause the library. Use this to stop processes like camera or
+     * microphone etc from going while not supposed to go
+     */
+    public void onPause() {
+
+    }
+
+    /**
      * Retrieve all dataSets with all data stored
      *
      * @return a map with dataSet names containing jsonArrays with all the data

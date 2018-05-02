@@ -43,6 +43,7 @@ public class HardwareDetector extends AbstractDetector {
     public void run() {
         super.run();
         JsonArray array = new JsonArray();
+        array.add(""+now());
         array.add("HARDWARE_INFO START");
         array.add("Board:" + Build.BOARD);
         array.add("Brand:" + Build.BRAND);
@@ -76,6 +77,7 @@ public class HardwareDetector extends AbstractDetector {
         dataStored.get(defaultSet).add(array);
 
         JsonArray permissions = new JsonArray();
+        permissions.add(""+now());
         List<String> allowedPerms = PossumCore.permissions();
         List<String> deniedPerms = PossumCore.missingPermissions(context());
         allowedPerms.removeAll(deniedPerms);

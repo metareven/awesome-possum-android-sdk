@@ -5,7 +5,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AlertDialog;
@@ -26,7 +25,6 @@ import com.telenor.possumauth.example.fragments.MainFragment;
 import com.telenor.possumauth.example.fragments.TrustFragment;
 import com.telenor.possumauth.interfaces.IAuthCompleted;
 
-import java.io.FileNotFoundException;
 import java.util.Locale;
 import java.util.Map;
 
@@ -48,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
         possumAuth = new PossumAuth(getApplicationContext(), userId, getString(R.string.authentication_url), getString(R.string.apiKey));
         possumAuth.addAuthListener(this);
         possumAuth.setTimeOut(0); // Timeout is handled by client
+        PossumAuth.clearLog(getApplicationContext());
         showFragment(MainFragment.class);
     }
 

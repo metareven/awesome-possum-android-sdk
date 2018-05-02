@@ -52,7 +52,6 @@ public class AllDetectorsChartFragment extends TrustFragment {
         super.onViewCreated(view, bundle);
         parser = new JsonParser();
         getContext().registerReceiver(receiver, new IntentFilter(AppConstants.UPDATE_GRAPHS));
-        LineData lineData = new LineData();
         lineChart = view.findViewById(R.id.lineChart);
         lineChart.setTouchEnabled(false);
         lineChart.setScaleEnabled(false);
@@ -90,8 +89,7 @@ public class AllDetectorsChartFragment extends TrustFragment {
         //lineChart.setVisibleXRangeMaximum(20);
         lineChart.setMaxVisibleValueCount(20);
 
-        lineChart.setNoDataText("No trustScores yet");
-        lineChart.setData(lineData);
+        lineChart.setNoDataText("No data yet");
     }
 
     @Override
@@ -131,6 +129,10 @@ public class AllDetectorsChartFragment extends TrustFragment {
                 String[] names = graphName.split(":");
                 String shortGraphName = String.format("%s:%s",shortHand(names[0]), shortHand(names[1]));
                 boolean isShown = obj.get("isShown").getAsBoolean();
+                if (lineChart.getLineData() == null) {
+                    LineData lineData = new LineData();
+                    lineChart.setData(lineData);
+                }
                 ILineDataSet dataSet = lineChart.getLineData().getDataSetByLabel(shortGraphName, true);
                 if (!isShown) {
                     if (dataSet != null) {
@@ -170,19 +172,21 @@ public class AllDetectorsChartFragment extends TrustFragment {
 
     private void addEntry(String graphName, float value) {
         LineData data = lineChart.getData();
-        if (data != null) {
-            ILineDataSet set = data.getDataSetByLabel(graphName, true);
-            if (set == null) {
-                set = GraphUtil.lineDataSet(graphName);
-                data.addDataSet(set);
-            }
-            set.addEntry(new Entry(set.getEntryCount(), value));
-            data.notifyDataChanged();
-
-            // move to the latest entry
-            lineChart.moveViewToX(data.getEntryCount());
-            // let the chart know it's data has changed
-            lineChart.notifyDataSetChanged();
+        if (data == null) {
+            data = new LineData();
+            lineChart.setData(data);
         }
+        ILineDataSet set = data.getDataSetByLabel(graphName, true);
+        if (set == null) {
+            set = GraphUtil.lineDataSet(graphName);
+            data.addDataSet(set);
+        }
+        set.addEntry(new Entry(set.getEntryCount(), value));
+        data.notifyDataChanged();
+
+        // move to the latest entry
+        lineChart.moveViewToX(data.getEntryCount());
+        // let the chart know it's data has changed
+        lineChart.notifyDataSetChanged();
     }
 }

@@ -12,6 +12,7 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 
 import com.google.gson.JsonArray;
+import com.telenor.possumcore.PossumCore;
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.DetectorType;
 import com.telenor.possumcore.interfaces.IDetectorChange;
@@ -91,7 +92,7 @@ public class AmbientSoundDetector extends AbstractDetector {
         // TODO: Clean up class and refactor
         recordingSamples = (int)(sampleRate() * (maxListeningTime / 1000));
         bufferSize = AudioTrack.getMinBufferSize(sampleRate(), AudioFormat.CHANNEL_OUT_MONO, audioEncoding());
-        audioHandler = getAudioHandler();
+        audioHandler = new Handler(Looper.getMainLooper());
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         audioRecorder = getAudioRecord();
     }
@@ -123,14 +124,26 @@ public class AmbientSoundDetector extends AbstractDetector {
         return AudioFormat.ENCODING_PCM_16BIT;
     }
 
-    private Handler getAudioHandler() {
-        return new Handler(Looper.getMainLooper());
-    }
-
+    /**
+     * Stops recording if it is already recording
+     */
     private void stopRecording() {
         if (isRecording()) {
-//            Log.d(tag, "AP: Stopping recording of ambient sound");
             audioRecorder.stop();
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // TODO: Find out if it should start up or not
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (isRecording()) {
+            stopRecording();
         }
     }
 
@@ -169,14 +182,14 @@ public class AmbientSoundDetector extends AbstractDetector {
              //   Log.i(tag, "AP: Data recording, recorded samples:"+recordedSamples);
                 if ((readSize = audioRecorder.read(buffer, 0, bufferSize)) != AudioRecord.ERROR_INVALID_OPERATION) {
                     // Calculate features
-             //       Log.i(tag, "AP: Read amount:"+readSize);
                     for (double[] window : getFeaturesFromSample(buffer, readSize, sampleRate())) {
-             //           Log.i(tag, "AP: Sample: "+Arrays.toString(window));
                         streamData(writeFeatureWindowToJsonArray(window));
                     }
                     recordedSamples += readSize;
                 }
             }
+        } else {
+            PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Unable to start audio:"+isEnabled()+","+isAvailable()+","+isRecording());
         }
     }
 
@@ -459,10 +472,12 @@ public class AmbientSoundDetector extends AbstractDetector {
      * @param samples       The audio signal for the sample
      * @param sampling_rate The sampling rate in Hz
      * @return MFCC coefficients
-     * @throws Exception if it fails
      */
-    private static double[] get_mfcc(double[] samples, double sampling_rate) throws Exception {
-        return cepCoefficients(nonLinearTransformation(melFilter(samples, fftBinIndices(sampling_rate))));
+    private static double[] get_mfcc(double[] samples, double sampling_rate) {
+        int[] cbin = fftBinIndices(sampling_rate);
+        double[] fbank = melFilter(samples, cbin);
+        double[] nonLinearTransformation = nonLinearTransformation(fbank);
+        return cepCoefficients(nonLinearTransformation);
     }
 
     /**
@@ -484,9 +499,8 @@ public class AmbientSoundDetector extends AbstractDetector {
      *
      * @param samples The audio signal for the sampele
      * @return LPC coefficients (lenght lpc_dimensions)
-     * @throws Exception if it fails
      */
-    private static double[] get_lpc(double[] samples) throws Exception {
+    private static double[] get_lpc(double[] samples) {
         final double lambda = 0.0;
         // find the order-P autocorrelation array, R, for the sequence x of
         // length L and warping of lambda
@@ -537,8 +551,8 @@ public class AmbientSoundDetector extends AbstractDetector {
             double km, Em1, Em;
             int k, s, m;
             for (k = 0; k < lpc_dimensions; k++) {
-                A[0] = 0;
-                Am1[0] = 0;
+                A[k] = 0; //A[0] = 0;
+                Am1[k] = 0; //Am1[0] = 0;
             }
             A[0] = 1;
             Am1[0] = 1;

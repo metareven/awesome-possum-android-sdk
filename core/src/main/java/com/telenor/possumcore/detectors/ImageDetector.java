@@ -23,6 +23,7 @@ import com.google.android.gms.vision.face.Landmark;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
+import com.telenor.possumcore.PossumCore;
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.DetectorType;
 import com.telenor.possumcore.facedetection.FaceDetector;
@@ -70,7 +71,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         super(context, listener);
         parser = new JsonParser();
         gson = new Gson();
-        setupCameraSource();
+//        setupCameraSource();
         createDataSet(lbpDataSet);
         try {
             tensorFlowInterface = createTensor(context.getAssets(), modelName);
@@ -117,6 +118,9 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
      */
     private void setupCameraSource() {
         setupFaceDetector();
+        if (cameraSource != null) {
+            cameraSource.release();
+        }
         cameraSource = new CameraSource.Builder(context(), detector)
                 .setFacing(CameraSource.CAMERA_FACING_FRONT)
                 .setRequestedPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT)
@@ -141,9 +145,11 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         super.run();
         if (isEnabled() && isAvailable()) {
             isProcessingFace = false;
+            setupCameraSource();
             try {
                 cameraSource.start();
             } catch (IOException e) {
+                PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Unable to start camera:"+e.getLocalizedMessage());
                 Log.i(tag, "AP: IO:", e);
             }
         }
@@ -153,7 +159,33 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     @Override
     public void terminate() {
         if (isPermitted()) {
-            cameraSource.stop();
+            cameraSource.release();
+//            cameraSource.stop();
+        }
+    }
+
+    @SuppressWarnings("MissingPermission")
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (isPermitted()) {
+            cameraSource.release();
+//            cameraSource.stop();
+        }
+    }
+
+    @SuppressWarnings("MissingPermission")
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (isPermitted()) {
+            try {
+                setupCameraSource();
+                cameraSource.start();
+            } catch (IOException e) {
+                PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Unable to start camera onResume:"+e.getLocalizedMessage());
+                Log.e(tag, "AP:Failed to restart camera:",e);
+            }
         }
     }
 
@@ -218,7 +250,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
                 isProcessingFace = false;
                 return;
             }
-
+            PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Face found");
             final Bitmap scaledOutput = Bitmap.createScaledBitmap(alignedFace, OUTPUT_BMP_WIDTH, OUTPUT_BMP_HEIGHT, false);
 
             long nowTimestamp = now();

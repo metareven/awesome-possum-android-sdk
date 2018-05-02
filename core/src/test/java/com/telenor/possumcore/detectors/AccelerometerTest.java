@@ -30,11 +30,11 @@ import java.util.Map;
 
 @Config(constants = BuildConfig.class)
 @RunWith(RobolectricTestRunner.class)
-public class BasicAccelerometerTest {
+public class AccelerometerTest {
     @Mock
     private Sensor mockedSensor;
 
-    private Accelerometer basicAccelerometer;
+    private Accelerometer accelerometer;
 
     @Before
     public void setUp() throws Exception {
@@ -43,19 +43,19 @@ public class BasicAccelerometerTest {
         Assert.assertNotNull(sensorManager);
         ShadowSensorManager shadowSensorManager = Shadows.shadowOf(sensorManager);
         shadowSensorManager.addSensor(Sensor.TYPE_ACCELEROMETER, mockedSensor);
-        basicAccelerometer = new Accelerometer(RuntimeEnvironment.application);
+        accelerometer = new Accelerometer(RuntimeEnvironment.application);
     }
 
     @After
     public void tearDown() throws Exception {
-        basicAccelerometer = null;
+        accelerometer = null;
     }
 
     @Test
     public void testInitialize() throws Exception {
-        Assert.assertNotNull(basicAccelerometer);
-        Assert.assertEquals(DetectorType.Accelerometer, basicAccelerometer.detectorType());
-        Assert.assertEquals("accelerometer", basicAccelerometer.detectorName());
+        Assert.assertNotNull(accelerometer);
+        Assert.assertEquals(DetectorType.Accelerometer, accelerometer.detectorType());
+        Assert.assertEquals("accelerometer", accelerometer.detectorName());
     }
 
     @Test
@@ -64,12 +64,12 @@ public class BasicAccelerometerTest {
         long nanoTimestamp = SystemClock.elapsedRealtime()*1000;
         Field dataStoredField = AbstractDetector.class.getDeclaredField("dataStored");
         dataStoredField.setAccessible(true);
-        Map<String, List<JsonArray>> dataStored = (Map<String, List<JsonArray>>)dataStoredField.get(basicAccelerometer);
+        Map<String, List<JsonArray>> dataStored = (Map<String, List<JsonArray>>)dataStoredField.get(accelerometer);
         Assert.assertEquals(1, dataStored.size());
         Assert.assertEquals(0, dataStored.get("default").size());
-        basicAccelerometer.onSensorChanged(TestUtils.createSensorEvent(mockedSensor, nanoTimestamp, 0, 1, 2, 3));
-        basicAccelerometer.onSensorChanged(TestUtils.createSensorEvent(mockedSensor, nanoTimestamp, 0, 1, 2, 3));
-        dataStored = (Map<String, List<JsonArray>>)dataStoredField.get(basicAccelerometer);
+        accelerometer.onSensorChanged(TestUtils.createSensorEvent(mockedSensor, nanoTimestamp, 0, 1, 2, 3));
+        accelerometer.onSensorChanged(TestUtils.createSensorEvent(mockedSensor, nanoTimestamp, 0, 1, 2, 3));
+        dataStored = (Map<String, List<JsonArray>>)dataStoredField.get(accelerometer);
         Assert.assertEquals(1, dataStored.get("default").size());
         JsonArray stored = dataStored.get("default").get(0);
         Assert.assertTrue(stored.get(0).getAsLong() >= presentTimestamp);

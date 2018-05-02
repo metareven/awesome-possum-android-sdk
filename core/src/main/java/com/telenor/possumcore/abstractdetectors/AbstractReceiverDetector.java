@@ -69,6 +69,18 @@ public abstract class AbstractReceiverDetector extends AbstractDetector {
         }
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        registerReceiver();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        unregisterReceiver(true);
+    }
+
     /**
      * Method for ensuring receiver is removed upon Possum termination. Terminate will also call
      * this, but not if it is always on. Cleanup removes it regardless.

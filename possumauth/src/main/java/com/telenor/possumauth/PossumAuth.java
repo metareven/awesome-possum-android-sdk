@@ -14,6 +14,7 @@ import com.telenor.possumcore.detectors.Accelerometer;
 import com.telenor.possumcore.detectors.AmbientSoundDetector;
 import com.telenor.possumcore.detectors.BluetoothDetector;
 import com.telenor.possumcore.detectors.GyroScope;
+import com.telenor.possumcore.detectors.HardwareDetector;
 import com.telenor.possumcore.detectors.ImageDetector;
 import com.telenor.possumcore.detectors.LocationDetector;
 import com.telenor.possumcore.detectors.NetworkDetector;
@@ -25,6 +26,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * Basic class for handling authentication based on data gathering from PossumCore
@@ -53,6 +56,7 @@ public class PossumAuth extends PossumCore implements IAuthCompleted {
 
     @Override
     protected void addAllDetectors(Context context) {
+        addDetector(new HardwareDetector(context, this));
         addDetector(new Accelerometer(context, this));
         addDetector(new AmbientSoundDetector(context, this));
         addDetector(new GyroScope(context, this));

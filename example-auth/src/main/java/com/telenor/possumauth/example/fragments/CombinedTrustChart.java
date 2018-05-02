@@ -32,7 +32,6 @@ public class CombinedTrustChart extends TrustFragment {
     @Override
     public void onViewCreated(View view, Bundle bundle) {
         super.onViewCreated(view, bundle);
-        LineData lineData = new LineData();
         lineChart = view.findViewById(R.id.lineChart);
         lineChart.setTouchEnabled(false);
         lineChart.setScaleEnabled(false);
@@ -73,7 +72,6 @@ public class CombinedTrustChart extends TrustFragment {
         lineChart.setMaxVisibleValueCount(20);
 
         lineChart.setNoDataText("No trustScores yet");
-        lineChart.setData(lineData);
     }
 
     @Override
@@ -94,22 +92,22 @@ public class CombinedTrustChart extends TrustFragment {
         }
 
         LineData data = lineChart.getData();
-
-        if (data != null) {
-
-            LineDataSet set = (LineDataSet)data.getDataSetByIndex(0);
-            if (set == null) {
-                set = GraphUtil.lineDataSet(graphName, Color.rgb(244, 117, 117));
-                data.addDataSet(set);
-            }
-            data.addEntry(new Entry(set.getEntryCount(), combinedTrustScore), 0);
-            data.notifyDataChanged();
-
-            // move to the latest entry
-            lineChart.moveViewToX(data.getEntryCount());
-
-            // let the chart know it's data has changed
-            lineChart.notifyDataSetChanged();
+        if (data == null) {
+            data = new LineData();
+            lineChart.setData(data);
         }
+        LineDataSet set = (LineDataSet)data.getDataSetByIndex(0);
+        if (set == null) {
+            set = GraphUtil.lineDataSet(graphName);
+            data.addDataSet(set);
+        }
+        set.addEntry(new Entry(set.getEntryCount(), combinedTrustScore));
+        data.notifyDataChanged();
+
+        // move to the latest entry
+        lineChart.moveViewToX(data.getEntryCount());
+
+        // let the chart know it's data has changed
+        lineChart.notifyDataSetChanged();
     }
 }

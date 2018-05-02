@@ -38,7 +38,6 @@ public class MainFragment extends TrustFragment {
     private boolean startedAuth;
     private BroadcastReceiver receiver;
     private Handler handler = new Handler(Looper.getMainLooper());
-    private static final String tag = MainFragment.class.getName();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
@@ -195,8 +194,11 @@ public class MainFragment extends TrustFragment {
                     case 0:
                         fragment = TrustFragment.instantiate(getContext(), AllDetectorsChartFragment.class.getName());
                         break;
-                    default:
+                    case 1:
                         fragment = TrustFragment.instantiate(getContext(), CombinedTrustChart.class.getName());
+                        break;
+                    default:
+                        fragment = TrustFragment.instantiate(getContext(), LogFragment.class.getName());
                 }
                 myPages.put(position, (TrustFragment) fragment);
             }
@@ -205,7 +207,7 @@ public class MainFragment extends TrustFragment {
 
         @Override
         public int getCount() {
-            return 2;
+            return 3;
         }
     }
 }

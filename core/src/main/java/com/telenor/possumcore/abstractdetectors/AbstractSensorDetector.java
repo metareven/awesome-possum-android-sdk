@@ -40,6 +40,18 @@ public abstract class AbstractSensorDetector extends AbstractDetector implements
         sensor = sensorManager.getDefaultSensor(sensorType);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        sensorManager.registerListener(this, sensor, MIN_INTERVAL_MICRO);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        sensorManager.unregisterListener(this, sensor);
+    }
+
     /**
      * Checks whether timestamp has passed a minimum of milliseconds.
      *

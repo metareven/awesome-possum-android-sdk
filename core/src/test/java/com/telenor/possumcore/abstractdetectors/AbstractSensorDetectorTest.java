@@ -201,12 +201,12 @@ public class AbstractSensorDetectorTest {
     }
 
     @Test
-    public void testSensorOnlyPicksUpEveryFiftyMillis() throws Exception {
+    public void testSensorOnlyPicksUpEveryThirtyFiveMillis() throws Exception {
         long timestamp = System.nanoTime();
         Assert.assertFalse(abstractSensorDetector.isInvalid(TestUtils.createSensorEvent(mockedSensor, timestamp, 0, 0.1f, 0.1f, 0.1f)));
         timestamp++;
         Assert.assertTrue(abstractSensorDetector.isInvalid(TestUtils.createSensorEvent(mockedSensor, timestamp, 0, 0.1f, 0.1f, 0.1f)));
-        timestamp += +50000000L;
+        timestamp += +35000000L;
         Assert.assertFalse(abstractSensorDetector.isInvalid(TestUtils.createSensorEvent(mockedSensor, timestamp, 0, 0.1f, 0.1f, 0.1f)));
     }
 

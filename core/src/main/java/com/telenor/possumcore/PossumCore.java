@@ -3,6 +3,7 @@ package com.telenor.possumcore;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Handler;
@@ -44,6 +45,9 @@ public abstract class PossumCore implements IDetectorChange {
     private List<IDetectorChange> changeListeners = new ArrayList<>();
     private AtomicBoolean deniedCamera = new AtomicBoolean(false);
     private long timeOut = 3000; // Default timeOut
+    private static List<Long> logTime = new ArrayList<>();
+    private static List<String> logText = new ArrayList<>();
+
     private static final String tag = PossumCore.class.getName();
 
     /**
@@ -57,6 +61,32 @@ public abstract class PossumCore implements IDetectorChange {
         for (AbstractDetector detector : detectors)
             detector.setUniqueUserId(uniqueUserId);
         userId = uniqueUserId;
+    }
+
+    /**
+     * Clears the log
+     */
+    public static void clearLog(@NonNull Context context) {
+        logTime.clear();
+        logText.clear();
+        context.sendBroadcast(new Intent(Constants.PossumLog));
+    }
+
+    /**
+     * Adds an entry to the log
+     *
+     * @param context   a valid android context
+     * @param timestamp the time the log entry happened
+     * @param text      the text stored
+     */
+    public static void addLogEntry(@NonNull Context context, long timestamp, String text) {
+        // TODO: This should be removed (or at least cleaned) before final. Purely debug for POC
+        logText.add(text);
+        logTime.add(timestamp);
+        Intent intent = new Intent(Constants.PossumLog);
+        intent.putExtra("time", timestamp);
+        intent.putExtra("log", text);
+        context.sendBroadcast(intent);
     }
 
     /**
@@ -83,7 +113,7 @@ public abstract class PossumCore implements IDetectorChange {
     public boolean startListening() {
         if (status.get() == CoreStatus.Running || detectors == null || detectors.size() == 0)
             return false;
-
+        // Question: What happens if it is paused or processing? Should it start a new data set?
         for (AbstractDetector detector : detectors) {
             if (detector instanceof ImageDetector && deniedCamera.get())
                 continue;
@@ -130,11 +160,12 @@ public abstract class PossumCore implements IDetectorChange {
      * a phone call interrupting or the user
      */
     public void onPause() {
-        if (status.get() == CoreStatus.Running) {
-            // TODO: Pause detectors
-            stopListening();
-            // setStatus must be after stopListening, since that will set it to idle
-            setStatus(CoreStatus.Paused);
+        switch (status.get()) {
+            case CoreStatus.Running:
+                // Correctly (presumably) called pause when exiting app. Pausing detectors.
+                for (AbstractDetector detector : detectors) detector.onPause();
+                setStatus(CoreStatus.Paused);
+                break;
         }
     }
 
@@ -148,9 +179,16 @@ public abstract class PossumCore implements IDetectorChange {
      * Handles an effective restart of eventual paused app due to interruption in progress
      */
     public void onResume() {
-        if (status.get() == CoreStatus.Paused) {
-            // TODO: Resume detectors
-            startListening(); // TODO: This will delete all previous data. How to handle this?
+        switch (status.get()) {
+            case CoreStatus.Paused:
+                // Ez way: startListening() - causes problems with deleting data set gathered so far
+                for (AbstractDetector detector : detectors) detector.onResume();
+                status.set(CoreStatus.Running);
+                break;
+            case CoreStatus.Running:
+                // Obviously someone missed a call to onPause. How to handle?
+                Log.e(tag, "AP: You are missing a call to onPause. This could cause problems with camera/microphone lockups. Remember to call onPause when exiting app");
+                break;
         }
     }
 
@@ -286,9 +324,8 @@ public abstract class PossumCore implements IDetectorChange {
      */
     public void stopListening() {
         if (status.get() == CoreStatus.Running) {
-            for (AbstractDetector detector : detectors) {
+            for (AbstractDetector detector : detectors)
                 detector.terminate();
-            }
             status.set(CoreStatus.Idle);
             Log.i(tag, "AP: Stop Listening");
         }
