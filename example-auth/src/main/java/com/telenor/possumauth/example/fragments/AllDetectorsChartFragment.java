@@ -93,15 +93,15 @@ public class AllDetectorsChartFragment extends TrustFragment {
     }
 
     @Override
-    public void newTrustScore(String graphName, float newScore) {
+    public void newTrustScore(String graphName, int graphPos, float newScore) {
 
     }
 
     @Override
-    public void detectorValues(String detectorName, String dataSetName, float score, float training) {
+    public void detectorValues(String detectorName, String dataSetName, int graphPos, float score, float training) {
         String graphName = String.format(Locale.US, "%s:%s", shortHand(detectorName), shortHand(dataSetName));
         if (isGraphVisible(graphName)) {
-            addEntry(graphName, score);
+            addEntry(graphName, graphPos, score);
         }
     }
 
@@ -170,7 +170,7 @@ public class AllDetectorsChartFragment extends TrustFragment {
         return name.substring(0, 3);
     }
 
-    private void addEntry(String graphName, float value) {
+    private void addEntry(String graphName, int graphPos, float value) {
         LineData data = lineChart.getData();
         if (data == null) {
             data = new LineData();
@@ -181,11 +181,11 @@ public class AllDetectorsChartFragment extends TrustFragment {
             set = GraphUtil.lineDataSet(graphName);
             data.addDataSet(set);
         }
-        set.addEntry(new Entry(set.getEntryCount(), value));
+        set.addEntry(new Entry(graphPos, value));
         data.notifyDataChanged();
 
         // move to the latest entry
-        lineChart.moveViewToX(data.getEntryCount());
+        lineChart.moveViewToX(graphPos);
         // let the chart know it's data has changed
         lineChart.notifyDataSetChanged();
     }

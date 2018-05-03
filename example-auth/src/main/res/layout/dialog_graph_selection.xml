@@ -35,6 +35,15 @@
             android:layout_weight="1"
             android:layout_height="wrap_content" />
     </LinearLayout>
+    <TextView
+        android:id="@+id/missingGraphs"
+        android:text="@string/no_graphs_available_yet"
+        android:layout_above="@id/confirmButtons"
+        android:visibility="gone"
+        android:layout_below="@id/title"
+        android:layout_margin="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_below="@id/title"

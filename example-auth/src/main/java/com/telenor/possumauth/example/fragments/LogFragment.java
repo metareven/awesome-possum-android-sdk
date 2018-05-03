@@ -13,12 +13,10 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.telenor.possumauth.PossumAuth;
 import com.telenor.possumauth.example.R;
 import com.telenor.possumcore.PossumCore;
 import com.telenor.possumcore.constants.Constants;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -66,12 +64,12 @@ public class LogFragment extends TrustFragment {
     }
 
     @Override
-    public void newTrustScore(String graphName, float newScore) {
+    public void newTrustScore(String graphName, int graphPos, float newScore) {
 
     }
 
     @Override
-    public void detectorValues(String detectorName, String dataSetName, float score, float training) {
+    public void detectorValues(String detectorName, String dataSetName, int graphPos, float score, float training) {
 
     }
 

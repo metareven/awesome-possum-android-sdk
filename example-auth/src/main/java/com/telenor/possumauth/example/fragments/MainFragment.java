@@ -126,14 +126,14 @@ public class MainFragment extends TrustFragment {
     }
 
     @Override
-    public void newTrustScore(String graphName, float newScore) {
+    public void newTrustScore(String graphName, int graphPos, float newScore) {
         if (startedAuth) {
             if (newScore >= 0) {
                 if ("default".equals(graphName)) {
                     handler.post(() -> trustButton.setTrustScore(newScore * 100, null));
                 }
-                adapter.myPages.get(0).newTrustScore(graphName, newScore);
-                adapter.myPages.get(1).newTrustScore(graphName, newScore);
+                adapter.myPages.get(0).newTrustScore(graphName, graphPos, newScore);
+                adapter.myPages.get(1).newTrustScore(graphName, graphPos, newScore);
             } else {
                 startedAuth = false;
                 handler.post(() -> trustButton.setTrustScore(0, "Failed"));
@@ -142,11 +142,11 @@ public class MainFragment extends TrustFragment {
     }
 
     @Override
-    public void detectorValues(String detectorName, String dataSetName, float score, float training) {
+    public void detectorValues(String detectorName, String dataSetName, int graphPos, float score, float training) {
         if (startedAuth) {
             iconWheel.updateSensorTrainingStatus(PossumAuth.detectorTypeFromName(detectorName), training);
-            adapter.myPages.get(0).detectorValues(detectorName, dataSetName, score, training);
-            adapter.myPages.get(1).detectorValues(detectorName, dataSetName, score, training);
+            adapter.myPages.get(0).detectorValues(detectorName, dataSetName, graphPos, score, training);
+            adapter.myPages.get(1).detectorValues(detectorName, dataSetName, graphPos, score, training);
         }
     }
 

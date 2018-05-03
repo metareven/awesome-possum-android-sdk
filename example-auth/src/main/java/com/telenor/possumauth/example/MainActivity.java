@@ -1,5 +1,6 @@
 package com.telenor.possumauth.example;
 
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -12,7 +13,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.FrameLayout;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -33,14 +33,14 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
     private SharedPreferences preferences;
     private PossumAuth possumAuth;
     private JsonParser parser;
-    private FrameLayout frameLayout;
+    private int graphPosition;
 
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         setContentView(R.layout.activity_main);
-        frameLayout = findViewById(R.id.mainFragment);
         parser = new JsonParser();
+        graphPosition = 0;
         preferences = getSharedPreferences(AppConstants.SHARED_PREFERENCES, MODE_PRIVATE);
         String userId = myId();
         possumAuth = new PossumAuth(getApplicationContext(), userId, getString(R.string.authentication_url), getString(R.string.apiKey));
@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
     }
 
     @Override
-    public void messageReturned(String message, Exception e) {
+    public void messageReturned(String message, String responseMessage, Exception e) {
         if (e == null) {
             JsonObject msgObj = (JsonObject) parser.parse(message);
             updateSharedPreferences(msgObj);
@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
                 JsonObject obj = el.getAsJsonObject();
                 String graphName = obj.get("name").getAsString();
                 float score = obj.get("score").getAsFloat();
-                ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).newTrustScore(graphName, score);
+                ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).newTrustScore(graphName, graphPosition, score);
             }
             Log.i(tag, "AP: Msg:" + message);
             for (Map.Entry<String, JsonElement> entry : sensors.entrySet()) {
@@ -70,20 +70,21 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
                 for (JsonElement el : arr) {
                     JsonObject graphObj = el.getAsJsonObject();
                     String dataSetName = graphObj.get("name").getAsString();
-                    ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).detectorValues(detectorName, dataSetName, graphObj.get("score").getAsFloat(), graphObj.get("status").getAsFloat());
+                    ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).detectorValues(detectorName, dataSetName, graphPosition, graphObj.get("score").getAsFloat(), graphObj.get("status").getAsFloat());
                 }
             }
             Send.message(getApplicationContext(), Messaging.AUTH_RETURNED);
         } else {
             Log.i(tag, "AP: Error when auth:", e);
             // Posts error message
-            ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).newTrustScore(null, -1);
+            ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).newTrustScore(null, graphPosition,-1);
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle(e.getMessage());
-            builder.setMessage(String.format(Locale.US,"Msg:%s\nStack:%s", message, e.fillInStackTrace()));
+            builder.setMessage(String.format(Locale.US,"Msg:%s\nStack:%s", responseMessage, e.fillInStackTrace()));
             builder.create().show();
             Send.message(getApplicationContext(), Messaging.AUTH_TERMINATE);
         }
+        graphPosition++;
     }
 
     private void updateSharedPreferences(JsonObject object) {
@@ -112,7 +113,7 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
                 if (!alreadyExists) {
                     JsonObject graph = new JsonObject();
                     graph.addProperty("name", fullName);
-                    graph.addProperty("isShown", true);
+                    graph.addProperty("isShown", false);
                     storedData.add(graph);
                 }
             }
@@ -168,12 +169,14 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
     @Override
     public void onPause() {
         super.onPause();
+        Log.i(tag, "AP: MainActivity onPause");
         possumAuth.onPause();
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        Log.i(tag, "AP: MainActivity onResume");
         possumAuth.onResume();
     }
 

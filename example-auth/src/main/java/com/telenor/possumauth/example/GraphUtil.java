@@ -21,7 +21,7 @@ public class GraphUtil {
     public static LineDataSet lineDataSet(String graphName) {
         LineDataSet set = new LineDataSet(null, graphName);
         set.setAxisDependency(YAxis.AxisDependency.LEFT);
-        set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        set.setMode(LineDataSet.Mode.LINEAR); //CUBIC_BEZIER
         set.setLineWidth(2f);
         set.setColor(colorWithName(graphName));
         set.setDrawValues(false);
@@ -30,7 +30,7 @@ public class GraphUtil {
     }
 
     private static int colorWithName(String graphName) {
-        if ("acc:def".equals(graphName)) {
+        if ("gac:def".equals(graphName)) {
             return Color.parseColor("#FF0000"); // Color.RED
         } else if ("ima:def".equals(graphName)) {
             return Color.parseColor("#0000FF"); // Color.BLUE

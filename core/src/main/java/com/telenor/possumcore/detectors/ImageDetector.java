@@ -61,6 +61,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     private boolean isProcessingFace;
     private JsonParser parser;
     private Gson gson;
+    private boolean didFindFace;
     private static final String lbpDataSet = "image_lbp";
     private static final String modelName = "tensorflow_facerecognition.pb";
 
@@ -71,7 +72,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         super(context, listener);
         parser = new JsonParser();
         gson = new Gson();
-//        setupCameraSource();
+        setupCameraSource();
         createDataSet(lbpDataSet);
         try {
             tensorFlowInterface = createTensor(context.getAssets(), modelName);
@@ -98,8 +99,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             com.google.android.gms.vision.face.FaceDetector googleFaceDetector = visionBuilder.build();
             detector = new FaceDetector(googleFaceDetector, this);
             detector.setProcessor(new FaceProcessor(detector, new FaceTracker()));
-        } else {
-            Log.i(tag, "Attempt to recreate but it was already there...");
         }
     }
 
@@ -145,7 +144,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         super.run();
         if (isEnabled() && isAvailable()) {
             isProcessingFace = false;
-            setupCameraSource();
+            didFindFace = false;
             try {
                 cameraSource.start();
             } catch (IOException e) {
@@ -158,9 +157,11 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     @SuppressWarnings("MissingPermission")
     @Override
     public void terminate() {
+        PossumCore.addLogEntry(context(), System.currentTimeMillis(), didFindFace?"Did find face during rotation":"No face found during rotation");
         if (isPermitted()) {
-            cameraSource.release();
-//            cameraSource.stop();
+            if (cameraSource != null) {
+                cameraSource.stop();
+            }
         }
     }
 
@@ -168,9 +169,12 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     @Override
     public void onPause() {
         super.onPause();
+        Log.i(tag, "AP: On Pause");
         if (isPermitted()) {
-            cameraSource.release();
-//            cameraSource.stop();
+            if (cameraSource != null) {
+                cameraSource.stop();
+                Log.i(tag, "AP: On Pause camera stop");
+            }
         }
     }
 
@@ -178,10 +182,13 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     @Override
     public void onResume() {
         super.onResume();
+        Log.i(tag, "AP: On Resume");
         if (isPermitted()) {
             try {
-                setupCameraSource();
-                cameraSource.start();
+                if (cameraSource != null) {
+                    cameraSource.start();
+                    Log.i(tag, "AP: On Resume camera restart");
+                }
             } catch (IOException e) {
                 PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Unable to start camera onResume:"+e.getLocalizedMessage());
                 Log.e(tag, "AP:Failed to restart camera:",e);
@@ -250,7 +257,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
                 isProcessingFace = false;
                 return;
             }
-            PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Face found");
+            didFindFace = true;
             final Bitmap scaledOutput = Bitmap.createScaledBitmap(alignedFace, OUTPUT_BMP_WIDTH, OUTPUT_BMP_HEIGHT, false);
 
             long nowTimestamp = now();
@@ -636,15 +643,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         }
     }
 
-    private static Bitmap alignFace(Bitmap face, PointF leftEye, PointF rightEye, PointF mouth) {
-        if (face == null) {
-            Log.i(tag, "AP: Bitmap is null w00t!");
-            return null;
-        }
-//        Matrix affineTransform = affineTransform(face.getWidth(), face.getHeight(), leftEye, rightEye, mouth);
-
-
-        // float[] pixels = bitmapToIntArray(face);
+    private static Bitmap alignFace(@NonNull Bitmap face, PointF leftEye, PointF rightEye, PointF mouth) {
         MatOfPoint2f src = new MatOfPoint2f();
         MatOfPoint2f dest = new MatOfPoint2f();
 

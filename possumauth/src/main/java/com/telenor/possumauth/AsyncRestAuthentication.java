@@ -21,6 +21,7 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
     private final URL url;
     private final String apiKey;
     private String successMessage;
+    private String responseMessage;
     private IAuthCompleted listener;
 
     private static final String tag = AsyncRestAuthentication.class.getName();
@@ -48,7 +49,7 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
             zipOut.close();
             byte[] dataZipped = bos.toByteArray();*/
 
-            Log.i(tag, "AP: Start connection to auth");
+            Log.i(tag, "AP: Start connection to auth - uploading:"+(data.length/1000)+" KB");
             long startTime = System.currentTimeMillis();
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestProperty("x-api-key", apiKey);
@@ -62,7 +63,7 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
             os = urlConnection.getOutputStream();
             os.write(data);
             int responseCode = urlConnection.getResponseCode();
-            String responseMessage = urlConnection.getResponseMessage();
+            responseMessage = urlConnection.getResponseMessage();
             Log.d(tag, "AP: "+responseCode + " -> " + responseMessage);
             is = urlConnection.getInputStream();
             StringBuilder output = new StringBuilder();
@@ -71,7 +72,7 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
             while ((line = reader.readLine()) != null)
                 output.append(line);
             successMessage = output.toString();
-            Log.i(tag, "AP: Received upload - time spent:"+(System.currentTimeMillis()-startTime)+", bytes uploaded:"+data.length);
+            Log.i(tag, "AP: Received upload - time spent:"+((System.currentTimeMillis()-startTime)/1000)+" seconds, bytes uploaded:"+data.length);
         } catch (Exception e) {
             Log.e(tag, "AP: Ex:", e);
             exception = e;
@@ -98,6 +99,6 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
 
     @Override
     public void onPostExecute(Exception exception) {
-        listener.messageReturned(successMessage, exception);
+        listener.messageReturned(successMessage, responseMessage, exception);
     }
 }

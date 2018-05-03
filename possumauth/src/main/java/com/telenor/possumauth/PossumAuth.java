@@ -5,6 +5,7 @@ import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.telenor.possumauth.interfaces.IAuthCompleted;
 import com.telenor.possumcore.PossumCore;
@@ -26,8 +27,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 
 /**
  * Basic class for handling authentication based on data gathering from PossumCore
@@ -82,6 +81,7 @@ public class PossumAuth extends PossumCore implements IAuthCompleted {
      * @param listener a listener for authentication
      */
     public void addAuthListener(IAuthCompleted listener) {
+        Log.i(tag, "AP: Add auth listener:"+listener);
         listeners.add(listener);
     }
 
@@ -91,6 +91,7 @@ public class PossumAuth extends PossumCore implements IAuthCompleted {
      * @param listener a listener for authentication
      */
     public void removeAuthListener(IAuthCompleted listener) {
+        Log.i(tag, "AP: Remove auth listener:"+listener);
         listeners.remove(listener);
     }
 
@@ -103,9 +104,20 @@ public class PossumAuth extends PossumCore implements IAuthCompleted {
         Log.i(tag, "AP: Start authenticate");
         JsonObject jsonData = new JsonObject();
         jsonData.addProperty("connectId", userId());
+        boolean isEmpty = true;
         for (AbstractDetector detector : detectors()) {
-            for (String dataSet : detector.dataStored().keySet())
-                jsonData.add(dataSet.equals("default")?detector.detectorName():dataSet, detector.jsonData(dataSet));
+            for (String dataSet : detector.dataStored().keySet()) {
+                String dataSetName = dataSet.equals("default") ? detector.detectorName() : dataSet;
+                JsonArray data = detector.jsonData(dataSet);
+                if (data.size() > 0) {
+                    jsonData.add(dataSetName, data);
+                    isEmpty = false;
+                }
+            }
+        }
+        if (isEmpty) {
+            Log.i(tag, "AP: No data, preventing authentication");
+            return false;
         }
         //storeToFile(jsonData);
         try {
@@ -154,7 +166,7 @@ public class PossumAuth extends PossumCore implements IAuthCompleted {
             fos = new FileOutputStream(outputFile);
             fos.write(object.toString().getBytes());
         } catch (FileNotFoundException e) {
-            Log.i(tag, "Outputfile not found:", e);
+            Log.i(tag, "OutputFile not found:", e);
         } catch (IOException e) {
             Log.i(tag, "Failed to write to file:", e);
         } finally {
@@ -169,9 +181,9 @@ public class PossumAuth extends PossumCore implements IAuthCompleted {
     }
 
     @Override
-    public void messageReturned(String message, Exception e) {
+    public void messageReturned(String message, String responseMessage, Exception e) {
         for (IAuthCompleted listener : listeners) {
-            listener.messageReturned(message, e);
+            listener.messageReturned(message, responseMessage, e);
         }
     }
 }

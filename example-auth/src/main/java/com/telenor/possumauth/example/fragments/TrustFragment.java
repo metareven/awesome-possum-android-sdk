@@ -18,6 +18,6 @@ public abstract class TrustFragment extends Fragment implements IDetectorChange 
     public void detectorChanged(AbstractDetector detector) {
 
     }
-    public abstract void newTrustScore(String graphName, float newScore);
-    public abstract void detectorValues(String detectorName, String dataSetName, float score, float training);
+    public abstract void newTrustScore(String graphName, int graphPos, float newScore);
+    public abstract void detectorValues(String detectorName, String dataSetName, int graphPos, float score, float training);
 }

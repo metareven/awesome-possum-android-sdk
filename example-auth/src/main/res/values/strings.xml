@@ -29,4 +29,5 @@
     <string name="selectGraphsToShow">Select which graphs you want to show</string>
     <string name="cancel">Cancel</string>
     <string name="about">About</string>
+    <string name="no_graphs_available_yet">No graphs available yet</string>
 </resources>

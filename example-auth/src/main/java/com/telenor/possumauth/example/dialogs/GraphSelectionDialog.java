@@ -1,6 +1,7 @@
 package com.telenor.possumauth.example.dialogs;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -8,6 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatDialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +29,9 @@ import java.util.List;
 
 public class GraphSelectionDialog extends AppCompatDialogFragment {
     private GraphAdapter myAdapter;
+    private TextView missingTextField;
+    private RecyclerView recyclerView;
+    private static final String tag = GraphSelectionDialog.class.getName();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
@@ -39,13 +44,15 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
         Button cancelButton = view.findViewById(R.id.cancel);
         cancelButton.setOnClickListener(v -> dismiss());
         Button okButton = view.findViewById(R.id.ok);
+        missingTextField = view.findViewById(R.id.missingGraphs);
+
         okButton.setOnClickListener(v -> {
             myAdapter.saveCurrent();
             getContext().sendBroadcast(new Intent(AppConstants.UPDATE_GRAPHS));
             dismiss();
         });
+        recyclerView = view.findViewById(R.id.recyclerView);
         myAdapter = new GraphAdapter(getActivity().getSharedPreferences(AppConstants.SHARED_PREFERENCES, Context.MODE_PRIVATE));
-        RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setAdapter(myAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
     }
@@ -92,14 +99,14 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
         }
     }
 
-
-    private class GraphAdapter extends RecyclerView.Adapter<ViewHolder> {
+    private class GraphAdapter extends RecyclerView.Adapter<ViewHolder> implements SharedPreferences.OnSharedPreferenceChangeListener{
         private SharedPreferences preferences;
         private List<GraphObject> objects = new ArrayList<>();
 
         GraphAdapter(SharedPreferences preferences) {
             this.preferences = preferences;
             updateFromSharedPreferences();
+            preferences.registerOnSharedPreferenceChangeListener(this);
         }
 
         @Override
@@ -118,7 +125,11 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
         }
 
         void updateFromSharedPreferences() {
-            if (preferences == null) return;
+            if (preferences == null) {
+                recyclerView.setVisibility(View.GONE);
+                missingTextField.setVisibility(View.VISIBLE);
+                return;
+            }
             String storedPrefs = preferences.getString(AppConstants.STORED_GRAPH_DISPLAY, null);
             objects.clear();
             if (storedPrefs != null) {
@@ -129,6 +140,8 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
                     objects.add(new GraphObject(obj));
                 }
             }
+            recyclerView.setVisibility(objects.size() == 0 ? View.GONE : View.VISIBLE);
+            missingTextField.setVisibility(objects.size() == 0 ? View.VISIBLE : View.GONE);
         }
 
         @Override
@@ -145,6 +158,16 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
             }
             editor.putString(AppConstants.STORED_GRAPH_DISPLAY, saveArray.toString());
             editor.apply();
+        }
+
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            if (AppConstants.STORED_GRAPH_DISPLAY.equals(key)) {
+                Log.i(tag, "AP: Changed shared prefs");
+                updateFromSharedPreferences();
+            } else {
+                Log.i(tag, "AP: Unknown key changed:"+key);
+            }
         }
     }
 }

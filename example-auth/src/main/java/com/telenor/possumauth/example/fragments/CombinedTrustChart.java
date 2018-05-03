@@ -75,16 +75,16 @@ public class CombinedTrustChart extends TrustFragment {
     }
 
     @Override
-    public void newTrustScore(String graphName, float newScore) {
-        addEntry(newScore, graphName);
+    public void newTrustScore(String graphName, int graphPos, float newScore) {
+        addEntry(graphPos, newScore, graphName);
     }
 
     @Override
-    public void detectorValues(String detectorName, String dataSetName, float score, float training) {
+    public void detectorValues(String detectorName, String dataSetName, int graphPos, float score, float training) {
 
     }
 
-    private void addEntry(float combinedTrustScore, String graphName) {
+    private void addEntry(int graphPos, float combinedTrustScore, String graphName) {
         if (!graphName.equals("default")) return;
         if (lineChart == null) {
             Log.i(tag, "Crisis, got a null lineChart in allSensors");
@@ -101,11 +101,11 @@ public class CombinedTrustChart extends TrustFragment {
             set = GraphUtil.lineDataSet(graphName);
             data.addDataSet(set);
         }
-        set.addEntry(new Entry(set.getEntryCount(), combinedTrustScore));
+        set.addEntry(new Entry(graphPos, combinedTrustScore));
         data.notifyDataChanged();
 
         // move to the latest entry
-        lineChart.moveViewToX(data.getEntryCount());
+        lineChart.moveViewToX(graphPos);
 
         // let the chart know it's data has changed
         lineChart.notifyDataSetChanged();
