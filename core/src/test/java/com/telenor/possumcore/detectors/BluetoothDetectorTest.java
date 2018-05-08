@@ -69,7 +69,7 @@ public class BluetoothDetectorTest {
     private int counter;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         counter = 0;
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -87,12 +87,12 @@ public class BluetoothDetectorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         bluetoothDetector = null;
     }
 
     @Test
-    public void testInitialValues() throws Exception {
+    public void testInitialValues() {
         Assert.assertEquals("bluetooth", bluetoothDetector.detectorName());
         Assert.assertEquals(DetectorType.Bluetooth, bluetoothDetector.detectorType());
     }
@@ -146,7 +146,7 @@ public class BluetoothDetectorTest {
     }
 
     @Test
-    public void testIsAvailable() throws Exception {
+    public void testIsAvailable() {
         Assert.assertTrue(bluetoothDetector.isAvailable());
         shadowBluetoothAdapter.disable();
         Assert.assertFalse(bluetoothDetector.isAvailable());
@@ -289,7 +289,7 @@ public class BluetoothDetectorTest {
     }
 
     @Test
-    public void testReceiveIntentRequestsStatusChange() throws Exception {
+    public void testReceiveIntentRequestsStatusChange() {
         Assert.assertEquals(0, counter);
         bluetoothDetector.onReceiveData(new Intent("meh"));
         Assert.assertEquals(1, counter);
@@ -361,24 +361,24 @@ public class BluetoothDetectorTest {
 
     @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
     @Test
-    public void testNoTxReturnsMinInt() throws Exception {
+    public void testNoTxReturnsMinInt() {
         // TODO: Implement
     }
 
     @Test
-    public void testRegularScanReturns() throws Exception {
+    public void testRegularScanReturns() {
         // TODO: Implement
     }
 
     @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
     @Test
-    public void testBLEScanStopsAfterMaxTime() throws Exception {
+    public void testBLEScanStopsAfterMaxTime() {
         // TODO: Implement
     }
 
     @Config(sdk = Build.VERSION_CODES.JELLY_BEAN_MR1)
     @Test
-    public void testRegularScanStopsAfterMaxTime() throws Exception {
+    public void testRegularScanStopsAfterMaxTime() {
         // TODO: Implement
     }
 }

@@ -68,7 +68,7 @@ public class ImageDetectorTest {
     private int counter;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         TestUtils.initializeJodaTime();
         counter = 0;
@@ -96,7 +96,7 @@ public class ImageDetectorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         imageDetector = null;
         ShadowCamera.clearCameraInfo();
     }
@@ -134,7 +134,7 @@ public class ImageDetectorTest {
     }
 
     @Test
-    public void testAvailable() throws Exception {
+    public void testAvailable() {
         Assert.assertTrue(imageDetector.isAvailable());
         ShadowApplication.getInstance().denyPermissions(Manifest.permission.CAMERA);
         Assert.assertFalse(imageDetector.isAvailable());
@@ -165,14 +165,14 @@ public class ImageDetectorTest {
     }
 
     @Test
-    public void testLBP() throws Exception {
+    public void testLBP() {
         Bitmap bitmap = BitmapFactory.decodeStream(getClass().getClassLoader().getResourceAsStream("unittest_image.png"));
         int[] lbpArray = imageDetector.mainLBP(bitmap);
         // TODO: Compare to file with correct data
     }
 
     @Test
-    public void testLandMark() throws Exception {
+    public void testLandMark() {
         Face mockedFace = mock(Face.class);
         List<Landmark> landmarks = new ArrayList<>();
         landmarks.add(new Landmark(new PointF(10, 12), Landmark.LEFT_EYE));
@@ -241,7 +241,7 @@ public class ImageDetectorTest {
     }
 
     @Test
-    public void testFaceFoundWithNoLandmarks() throws Exception {
+    public void testFaceFoundWithNoLandmarks() {
         Face mockedFace = mock(Face.class);
         Frame mockedFrame = mock(Frame.class);
         Frame.Metadata mockedMetaData = mock(Frame.Metadata.class);
@@ -260,7 +260,7 @@ public class ImageDetectorTest {
     }
 
     @Test
-    public void testFaceFoundWithCorrectLandmarks() throws Exception {
+    public void testFaceFoundWithCorrectLandmarks() {
         Face mockedFace = mock(Face.class);
         List<Landmark> landmarkList = new ArrayList<>();
         landmarkList.add(new Landmark(new PointF(20, 20), Landmark.LEFT_EYE));

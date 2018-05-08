@@ -37,7 +37,7 @@ public class AbstractReceiverDetectorTest {
     @Mock
     private Context mockedContext;
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         when(mockedContext.getApplicationContext()).thenReturn(mockedContext);
 
@@ -63,7 +63,7 @@ public class AbstractReceiverDetectorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         abstractReceiverDetector = null;
     }
 
@@ -80,7 +80,7 @@ public class AbstractReceiverDetectorTest {
     }
 
     @Test
-    public void testRunRegistersReceiver() throws Exception {
+    public void testRunRegistersReceiver() {
         abstractReceiverDetector = new AbstractReceiverDetector(mockedContext, detectorChange) {
             @Override
             protected void onReceiveData(Intent intent) {
@@ -106,7 +106,7 @@ public class AbstractReceiverDetectorTest {
     }
 
     @Test
-    public void testTerminateRemovesReceiver() throws Exception {
+    public void testTerminateRemovesReceiver() {
         abstractReceiverDetector = new AbstractReceiverDetector(mockedContext, detectorChange) {
             @Override
             protected void onReceiveData(Intent intent) {
@@ -135,7 +135,7 @@ public class AbstractReceiverDetectorTest {
     }
 
     @Test
-    public void testSendIntentIsRegistered() throws Exception {
+    public void testSendIntentIsRegistered() {
         Assert.assertEquals(0, counter);
         RuntimeEnvironment.application.sendBroadcast(new Intent("TestFilter"));
         Assert.assertEquals(0, counter);
@@ -152,7 +152,7 @@ public class AbstractReceiverDetectorTest {
     }
 
     @Test
-    public void testCleanupUnregistersReceiver() throws Exception {
+    public void testCleanupUnregistersReceiver() {
         abstractReceiverDetector = new AbstractReceiverDetector(mockedContext, detectorChange) {
             @Override
             protected void onReceiveData(Intent intent) {
@@ -181,7 +181,7 @@ public class AbstractReceiverDetectorTest {
     }
 
     @Test
-    public void testAddFilterAction() throws Exception {
+    public void testAddFilterAction() {
         abstractReceiverDetector.addFilterAction("validMeh");
         Assert.assertEquals(0, counter);
         abstractReceiverDetector.receiverIsAlwaysOn();
@@ -199,14 +199,14 @@ public class AbstractReceiverDetectorTest {
     }
 
     @Test
-    public void testDetectorChanges() throws Exception {
+    public void testDetectorChanges() {
         verify(detectorChange, times(0)).detectorChanged(any(AbstractReceiverDetector.class));
         abstractReceiverDetector.detectorStatusChanged();
         verify(detectorChange, times(1)).detectorChanged(any(AbstractReceiverDetector.class));
     }
 
     @Test
-    public void testRegistersReceiverWhenTurnedAlwaysOn() throws Exception {
+    public void testRegistersReceiverWhenTurnedAlwaysOn() {
         abstractReceiverDetector = new AbstractReceiverDetector(mockedContext, detectorChange) {
             @Override
             protected void onReceiveData(Intent intent) {

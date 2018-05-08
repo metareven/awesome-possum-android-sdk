@@ -24,12 +24,10 @@ import com.telenor.possumauth.example.MainActivity;
 import com.telenor.possumauth.example.Messaging;
 import com.telenor.possumauth.example.R;
 import com.telenor.possumauth.example.Send;
-import com.telenor.possumauth.example.views.IconWheel;
 import com.telenor.possumauth.example.views.TrustButton;
-import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 
 public class MainFragment extends TrustFragment {
-    private IconWheel iconWheel;
+    //private IconWheel iconWheel;
     private TrustButton trustButton;
     private boolean isRegistered;
     private TextView status;
@@ -85,7 +83,7 @@ public class MainFragment extends TrustFragment {
         };
         possumAuth = ((MainActivity) getActivity()).possumAuth();
         status = view.findViewById(R.id.status);
-        iconWheel = view.findViewById(R.id.iconWheel);
+        //iconWheel = view.findViewById(R.id.iconWheel);
         trustButton = view.findViewById(R.id.trustWheel);
         if (((MainActivity) getActivity()).validId(myId())) {
             status.setText("Ready for auth");
@@ -142,12 +140,17 @@ public class MainFragment extends TrustFragment {
     }
 
     @Override
-    public void detectorValues(String detectorName, String dataSetName, int graphPos, float score, float training) {
+    public void detectorValues(String graphName, int graphPos, float score, float training) {
         if (startedAuth) {
-            iconWheel.updateSensorTrainingStatus(PossumAuth.detectorTypeFromName(detectorName), training);
-            adapter.myPages.get(0).detectorValues(detectorName, dataSetName, graphPos, score, training);
-            adapter.myPages.get(1).detectorValues(detectorName, dataSetName, graphPos, score, training);
+            //iconWheel.updateSensorTrainingStatus(PossumAuth.detectorTypeFromName(detectorName), training);
+            adapter.myPages.get(0).detectorValues(graphName, graphPos, score, training);
+            adapter.myPages.get(1).detectorValues(graphName, graphPos, score, training);
         }
+    }
+
+    @Override
+    public void updateVisibility(String graphName, boolean visible) {
+        adapter.myPages.get(0).updateVisibility(graphName, visible);
     }
 
     @Override
@@ -157,8 +160,8 @@ public class MainFragment extends TrustFragment {
             getContext().getApplicationContext().registerReceiver(receiver, new IntentFilter("PossumMessage"));
             isRegistered = true;
         }
-        for (AbstractDetector detector : possumAuth.detectors())
-            iconWheel.detectorChanged(detector);
+        //for (AbstractDetector detector : possumAuth.detectors())
+        //    iconWheel.detectorChanged(detector);
         for (int i = 0; i < adapter.getCount(); i++)
             possumAuth.addChangeListener(adapter.getItem(i));
     }

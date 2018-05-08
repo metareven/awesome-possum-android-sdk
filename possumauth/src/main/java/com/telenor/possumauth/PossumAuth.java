@@ -81,7 +81,6 @@ public class PossumAuth extends PossumCore implements IAuthCompleted {
      * @param listener a listener for authentication
      */
     public void addAuthListener(IAuthCompleted listener) {
-        Log.i(tag, "AP: Add auth listener:"+listener);
         listeners.add(listener);
     }
 
@@ -91,7 +90,6 @@ public class PossumAuth extends PossumCore implements IAuthCompleted {
      * @param listener a listener for authentication
      */
     public void removeAuthListener(IAuthCompleted listener) {
-        Log.i(tag, "AP: Remove auth listener:"+listener);
         listeners.remove(listener);
     }
 
@@ -101,7 +99,7 @@ public class PossumAuth extends PossumCore implements IAuthCompleted {
      * @return false if no data is available to send or it failed to send data
      */
     public boolean authenticate() {
-        Log.i(tag, "AP: Start authenticate");
+//        Log.i(tag, "AP: Start authenticate");
         JsonObject jsonData = new JsonObject();
         jsonData.addProperty("connectId", userId());
         boolean isEmpty = true;

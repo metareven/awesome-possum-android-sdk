@@ -32,28 +32,28 @@ public class TensorWeightsTest {
     private TensorWeights tensorWeights;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
 //        tensorWeights = new TensorWeights(mockedAssetManager, "fakeModel");
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
 //        tensorWeights = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
 //        Assert.assertNotNull(mockedTensorWeights);
     }
 
     @Test
-    public void testGetWeights() throws Exception {
+    public void testGetWeights() {
         // TODO: Implement
     }
 
     @Test
-    public void testBitmapToIntArray() throws Exception {
+    public void testBitmapToIntArray() {
         Bitmap bitmap = BitmapFactory.decodeStream(getClass().getClassLoader().getResourceAsStream("unittest_image.png"));
         float[] array = TensorWeights.bitmapToFloatArray(bitmap);
         // TODO: Compare to result

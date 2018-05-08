@@ -27,7 +27,7 @@ public class AbstractDetectorTest {
     private IDetectorChange detectorChange;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         TestUtils.initializeJodaTime();
         detectorChange = Mockito.mock(IDetectorChange.class);
         abstractDetector = new AbstractDetector(RuntimeEnvironment.application, detectorChange) {
@@ -49,12 +49,12 @@ public class AbstractDetectorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         abstractDetector = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(abstractDetector);
         Assert.assertEquals("abstractDetector", abstractDetector.detectorName());
         Assert.assertEquals(999, abstractDetector.detectorType());
@@ -62,7 +62,7 @@ public class AbstractDetectorTest {
     }
 
     @Test
-    public void testInvalidArgument() throws Exception {
+    public void testInvalidArgument() {
         try {
             abstractDetector = new AbstractDetector(null, null) {
                 @Override
@@ -87,7 +87,7 @@ public class AbstractDetectorTest {
     }
 
     @Test
-    public void testNowAndJoda() throws Exception {
+    public void testNowAndJoda() {
         try {
             long present = System.currentTimeMillis();
             long timestamp = abstractDetector.now();
@@ -98,19 +98,19 @@ public class AbstractDetectorTest {
     }
 
     @Test
-    public void testIsAvailable() throws Exception {
+    public void testIsAvailable() {
         Assert.assertNull(abstractDetector.requiredPermission());
         Assert.assertTrue(abstractDetector.isPermitted());
         Assert.assertTrue(abstractDetector.isAvailable());
     }
 
     @Test
-    public void testIsEnabledByDefault() throws Exception {
+    public void testIsEnabledByDefault() {
         Assert.assertTrue(abstractDetector.isEnabled());
     }
 
     @Test
-    public void testLongScanIsFalseByDefault() throws Exception {
+    public void testLongScanIsFalseByDefault() {
         Assert.assertFalse(abstractDetector.isLongScanDoable());
     }
 
@@ -124,17 +124,17 @@ public class AbstractDetectorTest {
     }
 
     @Test
-    public void testInvalidDataSetReturnsNull() throws Exception {
+    public void testInvalidDataSetReturnsNull() {
         Assert.assertNull(abstractDetector.dataSet("invalidSet"));
     }
 
     @Test
-    public void testNoPermissionRequiredInAbstraction() throws Exception {
+    public void testNoPermissionRequiredInAbstraction() {
         Assert.assertNull(abstractDetector.requiredPermission());
     }
 
     @Test
-    public void testPermittedReturnsFalseIfNotGranted() throws Exception {
+    public void testPermittedReturnsFalseIfNotGranted() {
         abstractDetector = new AbstractDetector(RuntimeEnvironment.application, detectorChange) {
             @Override
             public int detectorType() {
@@ -160,7 +160,7 @@ public class AbstractDetectorTest {
     }
 
     @Test
-    public void testPermittedReturnsTrueIfGranted() throws Exception {
+    public void testPermittedReturnsTrueIfGranted() {
         abstractDetector = new AbstractDetector(RuntimeEnvironment.application, detectorChange) {
             @Override
             public int detectorType() {
@@ -228,14 +228,14 @@ public class AbstractDetectorTest {
     }
 
     @Test
-    public void testUserId() throws Exception {
+    public void testUserId() {
         Assert.assertNull(abstractDetector.getUserId());
         abstractDetector.setUniqueUserId("testId");
         Assert.assertEquals("testId", abstractDetector.getUserId());
     }
 
     @Test
-    public void testChangeInStatus() throws Exception {
+    public void testChangeInStatus() {
         abstractDetector.detectorStatusChanged();
     }
 
@@ -253,7 +253,7 @@ public class AbstractDetectorTest {
     }
 
     @Test
-    public void testCleanUpForCompletion() throws Exception {
+    public void testCleanUpForCompletion() {
         abstractDetector.cleanUp();
     }
 }

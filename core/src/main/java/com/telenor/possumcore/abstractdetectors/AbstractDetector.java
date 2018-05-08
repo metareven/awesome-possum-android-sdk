@@ -213,8 +213,10 @@ public abstract class AbstractDetector implements Runnable {
     /**
      * Handles what happens when you restart the library after a pause. Use this to restart
      * processes like camera or microphone.
+     *
+     * @param continueRunning whether to continue running or not
      */
-    public void onResume() {
+    public void onResume(boolean continueRunning) {
 
     }
 

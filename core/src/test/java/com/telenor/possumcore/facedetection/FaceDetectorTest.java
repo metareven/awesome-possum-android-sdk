@@ -37,13 +37,13 @@ public class FaceDetectorTest {
     private FaceDetector faceDetector;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         faceDetector = new FaceDetector(mockedDetector, mockedInterface);
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         faceDetector = null;
     }
 
@@ -56,7 +56,7 @@ public class FaceDetectorTest {
     }
 
     @Test
-    public void testOperational() throws Exception {
+    public void testOperational() {
         when(mockedDetector.isOperational()).thenReturn(true);
         Assert.assertTrue(faceDetector.isOperational());
         when(mockedDetector.isOperational()).thenReturn(false);
@@ -64,7 +64,7 @@ public class FaceDetectorTest {
     }
 
     @Test
-    public void destroyReleasesDelegate() throws Exception {
+    public void destroyReleasesDelegate() {
         verify(mockedDetector, never()).release();
         faceDetector.destroy();
         verify(mockedDetector, times(1)).release();
@@ -73,14 +73,14 @@ public class FaceDetectorTest {
     }
 
     @Test
-    public void testRelease() throws Exception {
+    public void testRelease() {
         Assert.assertFalse(faceDetector.isReleased());
         faceDetector.destroy();
         Assert.assertTrue(faceDetector.isReleased());
     }
 
     @Test
-    public void testEmptyArrayOnNullFrame() throws Exception {
+    public void testEmptyArrayOnNullFrame() {
         SparseArray emptyList = faceDetector.detect(null);
         Assert.assertTrue(emptyList.size() == 0);
         faceDetector = new FaceDetector(null, mockedInterface);
@@ -89,7 +89,7 @@ public class FaceDetectorTest {
     }
 
     @Test
-    public void testDetectFrame() throws Exception {
+    public void testDetectFrame() {
         Frame mockedFrame = mock(Frame.class);
         SparseArray<Face> fakeFaces = new SparseArray<>();
         Face mockedFace = mock(Face.class);
@@ -105,7 +105,7 @@ public class FaceDetectorTest {
         Assert.assertSame(mockedFace, facesFound.get(1));
     }
     @Test
-    public void testDetectFrameWithNoFacesDoesNothing() throws Exception {
+    public void testDetectFrameWithNoFacesDoesNothing() {
         Frame mockedFrame = mock(Frame.class);
         SparseArray<Face> fakeFaces = new SparseArray<>();
         when(mockedDetector.detect(any(Frame.class))).thenReturn(fakeFaces);

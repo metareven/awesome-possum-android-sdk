@@ -70,8 +70,8 @@ public abstract class AbstractReceiverDetector extends AbstractDetector {
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
+    public void onResume(boolean continueRunning) {
+        super.onResume(continueRunning);
         registerReceiver();
     }
 

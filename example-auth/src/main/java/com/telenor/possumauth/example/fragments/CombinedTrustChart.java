@@ -1,6 +1,5 @@
 package com.telenor.possumauth.example.fragments;
 
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,7 +14,6 @@ import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.google.gson.JsonObject;
 import com.telenor.possumauth.example.GraphUtil;
 import com.telenor.possumauth.example.R;
 
@@ -80,14 +78,19 @@ public class CombinedTrustChart extends TrustFragment {
     }
 
     @Override
-    public void detectorValues(String detectorName, String dataSetName, int graphPos, float score, float training) {
+    public void detectorValues(String graphName, int graphPos, float score, float training) {
+
+    }
+
+    @Override
+    public void updateVisibility(String graphName, boolean visible) {
 
     }
 
     private void addEntry(int graphPos, float combinedTrustScore, String graphName) {
         if (!graphName.equals("default")) return;
         if (lineChart == null) {
-            Log.i(tag, "Crisis, got a null lineChart in allSensors");
+            Log.i(tag, "AP: Crisis, got a null lineChart in allSensors");
             return;
         }
 

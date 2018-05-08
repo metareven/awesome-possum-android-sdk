@@ -32,17 +32,17 @@ public class HardwareDetectorTest {
     private HardwareDetector hardwareDetector;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         hardwareDetector = new HardwareDetector(RuntimeEnvironment.application);
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         hardwareDetector = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(hardwareDetector);
         Assert.assertEquals(DetectorType.Hardware, hardwareDetector.detectorType());
         Assert.assertEquals("hardware", hardwareDetector.detectorName());
@@ -107,7 +107,7 @@ public class HardwareDetectorTest {
     }
 
     @Test
-    public void testTerminate() throws Exception {
+    public void testTerminate() {
         hardwareDetector.terminate();
     }
 }

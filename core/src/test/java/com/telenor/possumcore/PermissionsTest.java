@@ -17,7 +17,7 @@ import java.util.List;
 @RunWith(RobolectricTestRunner.class)
 public class PermissionsTest {
     @Test
-    public void testPermissionsOfCore() throws Exception {
+    public void testPermissionsOfCore() {
         Config config = new Config.Builder().setManifest("src/main/AndroidManifest.xml").setConstants(BuildConfig.class).build();
         String moduleRoot = getModuleRootPath(config);
         FsFile androidManifestFile = FileFsFile.from(moduleRoot, "src/main/AndroidManifest.xml");

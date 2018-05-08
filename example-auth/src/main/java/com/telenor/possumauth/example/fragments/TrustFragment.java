@@ -19,5 +19,6 @@ public abstract class TrustFragment extends Fragment implements IDetectorChange 
 
     }
     public abstract void newTrustScore(String graphName, int graphPos, float newScore);
-    public abstract void detectorValues(String detectorName, String dataSetName, int graphPos, float score, float training);
+    public abstract void detectorValues(String graphName, int graphPos, float score, float training);
+    public abstract void updateVisibility(String graphName, boolean visible);
 }

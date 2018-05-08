@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,8 +16,6 @@ import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -26,9 +23,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.telenor.possumauth.example.AppConstants;
 import com.telenor.possumauth.example.GraphUtil;
+import com.telenor.possumauth.example.MainActivity;
 import com.telenor.possumauth.example.R;
 
-import java.util.Locale;
+import java.util.Map;
 
 public class AllDetectorsChartFragment extends TrustFragment {
     private LineChart lineChart;
@@ -98,58 +96,27 @@ public class AllDetectorsChartFragment extends TrustFragment {
     }
 
     @Override
-    public void detectorValues(String detectorName, String dataSetName, int graphPos, float score, float training) {
-        String graphName = String.format(Locale.US, "%s:%s", shortHand(detectorName), shortHand(dataSetName));
-        if (isGraphVisible(graphName)) {
-            addEntry(graphName, graphPos, score);
-        }
+    public void detectorValues(String graphName, int graphPos, float score, float training) {
+        JsonObject graphs = ((MainActivity)getActivity()).graphVisibility();
+        JsonElement el = graphs.get(graphName);
+        boolean visible = !el.isJsonNull() && el.getAsBoolean();
+        GraphUtil.addEntry(lineChart, visible, graphName, graphPos, score);
     }
 
-    private boolean isGraphVisible(String graphName) {
-        if (presentArray == null) return false;
-        for (JsonElement el : presentArray) {
-            JsonObject obj = el.getAsJsonObject();
-            boolean isShown = obj.get("isShown").getAsBoolean();
-            if (!isShown) continue;
-            String originalName = obj.get("name").getAsString();
-            String[] splits = originalName.split(":");
-            String sName = String.format("%s:%s", shortHand(splits[0]), shortHand(splits[1]));
-            if (sName.equals(graphName)) return true;
-        }
-        return false;
+    @Override
+    public void updateVisibility(String graphName, boolean visible) {
+        GraphUtil.updateVisibility(lineChart, graphName, visible);
     }
 
     private void changeGraphs() {
         handler.post(() -> {
-            SharedPreferences prefs = getContext().getSharedPreferences(AppConstants.SHARED_PREFERENCES, Context.MODE_PRIVATE);
-            presentArray = (JsonArray)parser.parse(prefs.getString(AppConstants.STORED_GRAPH_DISPLAY, "[]"));
-            for (JsonElement el : presentArray) {
-                JsonObject obj = el.getAsJsonObject();
-                String graphName = obj.get("name").getAsString();
-                String[] names = graphName.split(":");
-                String shortGraphName = String.format("%s:%s",shortHand(names[0]), shortHand(names[1]));
-                boolean isShown = obj.get("isShown").getAsBoolean();
-                if (lineChart.getLineData() == null) {
-                    LineData lineData = new LineData();
-                    lineChart.setData(lineData);
-                }
-                ILineDataSet dataSet = lineChart.getLineData().getDataSetByLabel(shortGraphName, true);
-                if (!isShown) {
-                    if (dataSet != null) {
-                        lineChart.getLineData().removeDataSet(dataSet);
-                        lineChart.getLineData().notifyDataChanged();
-                    }
-                } else {
-                    if (dataSet == null) {
-                        ILineDataSet set = GraphUtil.lineDataSet(shortGraphName);
-                        // TODO: Remove the adding of a 0 entry?
-                        set.addEntry(new Entry(set.getEntryCount(), 0));
-                        lineChart.getLineData().addDataSet(set);
-                        lineChart.getLineData().notifyDataChanged();
-                    }
-                }
+            if (lineChart.getLineData() == null) return;
+            for (Map.Entry<String, JsonElement> entry : ((MainActivity)getActivity()).graphVisibility().entrySet()) {
+                String graphName = entry.getKey();
+                ILineDataSet dataSet = lineChart.getLineData().getDataSetByLabel(graphName, true);
+                if (dataSet != null)
+                    dataSet.setVisible(entry.getValue().getAsBoolean());
             }
-            lineChart.notifyDataSetChanged();
             lineChart.invalidate();
         });
     }
@@ -164,29 +131,5 @@ public class AllDetectorsChartFragment extends TrustFragment {
     public void onResume() {
         super.onResume();
         changeGraphs();
-    }
-
-    private String shortHand(String name) {
-        return name.substring(0, 3);
-    }
-
-    private void addEntry(String graphName, int graphPos, float value) {
-        LineData data = lineChart.getData();
-        if (data == null) {
-            data = new LineData();
-            lineChart.setData(data);
-        }
-        ILineDataSet set = data.getDataSetByLabel(graphName, true);
-        if (set == null) {
-            set = GraphUtil.lineDataSet(graphName);
-            data.addDataSet(set);
-        }
-        set.addEntry(new Entry(graphPos, value));
-        data.notifyDataChanged();
-
-        // move to the latest entry
-        lineChart.moveViewToX(graphPos);
-        // let the chart know it's data has changed
-        lineChart.notifyDataSetChanged();
     }
 }

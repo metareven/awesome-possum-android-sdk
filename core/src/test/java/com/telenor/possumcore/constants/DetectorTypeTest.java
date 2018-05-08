@@ -6,7 +6,7 @@ import org.junit.runner.RunWith;
 
 public class DetectorTypeTest {
     @Test
-    public void testValues() throws Exception {
+    public void testValues() {
         DetectorType type = new DetectorType();
         Assert.assertNotNull(type);
         Assert.assertEquals(1, DetectorType.Accelerometer);

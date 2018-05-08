@@ -17,22 +17,22 @@ import org.robolectric.annotation.Config;
 public class AmazonUploadServiceTest {
     private AmazonUploadService service;
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         service = new AmazonUploadService();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         service = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(service);
     }
 
     @Test
-    public void testBindReturnsNull() throws Exception {
+    public void testBindReturnsNull() {
         Assert.assertNull(service.onBind(new Intent()));
     }
 }

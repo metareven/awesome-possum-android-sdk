@@ -60,7 +60,7 @@ public class LocationDetectorTest {
     private int statusChangedCounter;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         TestUtils.initializeJodaTime();
         statusChangedCounter = 0;
@@ -83,7 +83,7 @@ public class LocationDetectorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         locationDetector = null;
     }
 
@@ -97,7 +97,7 @@ public class LocationDetectorTest {
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(locationDetector);
         Assert.assertEquals("position", locationDetector.detectorName());
         Assert.assertEquals(DetectorType.Position, locationDetector.detectorType());
@@ -105,7 +105,7 @@ public class LocationDetectorTest {
     }
 
     @Test
-    public void testEnabled() throws Exception {
+    public void testEnabled() {
         Assert.assertTrue(locationDetector.isEnabled());
         when(mockedContext.getSystemService(Context.LOCATION_SERVICE)).thenReturn(null);
         locationDetector = new LocationDetector(mockedContext);
@@ -122,7 +122,7 @@ public class LocationDetectorTest {
     }
 
     @Test
-    public void testAvailabilityWhenStatusChanges() throws Exception {
+    public void testAvailabilityWhenStatusChanges() {
         Assert.assertTrue(locationDetector.isAvailable());
         shadowLocationManager.setProviderEnabled(LocationManager.NETWORK_PROVIDER, false);
         locationDetector.onStatusChanged(LocationManager.NETWORK_PROVIDER, LocationProvider.OUT_OF_SERVICE, null);
@@ -206,7 +206,7 @@ public class LocationDetectorTest {
     }
 
     @Test
-    public void testRunIgnoresNotAvailableOrEnabled() throws Exception {
+    public void testRunIgnoresNotAvailableOrEnabled() {
         when(mockedLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)).thenReturn(false);
         when(mockedLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)).thenReturn(false);
         when(mockedContext.getSystemService(Context.LOCATION_SERVICE)).thenReturn(mockedLocationManager);
@@ -230,7 +230,7 @@ public class LocationDetectorTest {
     }
 
     @Test
-    public void testRunStartsRequestIfMissingLastOrLongerThanTenMinutesAgo() throws Exception {
+    public void testRunStartsRequestIfMissingLastOrLongerThanTenMinutesAgo() {
         List<String> providers = new ArrayList<>();
         providers.add(LocationManager.GPS_PROVIDER);
         providers.add(LocationManager.NETWORK_PROVIDER);
@@ -292,7 +292,7 @@ public class LocationDetectorTest {
     }
 
     @Test
-    public void testProvidersEnabledAndDisabled() throws Exception {
+    public void testProvidersEnabledAndDisabled() {
         Assert.assertTrue(locationDetector.isAvailable());
         shadowLocationManager.setProviderEnabled(LocationManager.NETWORK_PROVIDER, false);
         locationDetector.onProviderDisabled(LocationManager.NETWORK_PROVIDER);
@@ -317,7 +317,7 @@ public class LocationDetectorTest {
     }
 
     @Test
-    public void testReceivingProvidersChangedIntentFiresUpdate() throws Exception {
+    public void testReceivingProvidersChangedIntentFiresUpdate() {
         Intent intent = new Intent(LocationManager.PROVIDERS_CHANGED_ACTION);
         Assert.assertEquals(0, statusChangedCounter);
         locationDetector.onReceiveData(intent);
@@ -325,7 +325,7 @@ public class LocationDetectorTest {
     }
 
     @Test
-    public void testRequestPositionMethod() throws Exception {
+    public void testRequestPositionMethod() {
         List<String> providers = new ArrayList<>();
         providers.add(LocationManager.GPS_PROVIDER);
         providers.add(LocationManager.NETWORK_PROVIDER);
@@ -340,7 +340,7 @@ public class LocationDetectorTest {
     }
 
     @Test
-    public void testTerminateRemovesUpdates() throws Exception {
+    public void testTerminateRemovesUpdates() {
         when(mockedContext.getSystemService(Context.LOCATION_SERVICE)).thenReturn(mockedLocationManager);
         locationDetector = new LocationDetector(mockedContext);
         verify(mockedLocationManager, times(0)).removeUpdates(any(LocationListener.class));

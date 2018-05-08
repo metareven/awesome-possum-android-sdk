@@ -52,7 +52,7 @@ public class PossumCoreTest {
     private ImageDetector mockedImageDetector;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         possumCore = new PossumCore(RuntimeEnvironment.application, "testId") {
             @Override
@@ -64,12 +64,12 @@ public class PossumCoreTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         possumCore = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(possumCore);
     }
 
@@ -89,7 +89,7 @@ public class PossumCoreTest {
     }
 
     @Test
-    public void testPermissions() throws Exception {
+    public void testPermissions() {
         List<String> permissions = PossumCore.permissions();
         Assert.assertTrue(permissions.contains(Manifest.permission.BLUETOOTH_ADMIN));
         Assert.assertTrue(permissions.contains(Manifest.permission.BLUETOOTH));
@@ -136,7 +136,7 @@ public class PossumCoreTest {
     }
 
     @Test
-    public void testRequestPermissions() throws Exception {
+    public void testRequestPermissions() {
         Activity activity = Robolectric.buildActivity(Activity.class).create().resume().get();
         ShadowActivity shadowActivity = Shadows.shadowOf(activity);
         possumCore.requestNeededPermissions(activity);
@@ -144,21 +144,21 @@ public class PossumCoreTest {
     }
 
     @Test
-    public void testOnResume() throws Exception {
+    public void testOnResume() {
         // TODO: Implement
         possumCore.setStatus(CoreStatus.Running);
         possumCore.onResume();
     }
 
     @Test
-    public void testOnPause() throws Exception {
+    public void testOnPause() {
         // TODO: Implement
         possumCore.setStatus(CoreStatus.Running);
         possumCore.onPause();
     }
 
     @Test
-    public void testConfigurationChanged() throws Exception {
+    public void testConfigurationChanged() {
         // TODO: Implement
         possumCore.onConfigurationChanged(null);
     }
@@ -173,7 +173,7 @@ public class PossumCoreTest {
     }
 
     @Test
-    public void testStartListeningWithoutDetectors() throws Exception {
+    public void testStartListeningWithoutDetectors() {
         possumCore = new PossumCore(RuntimeEnvironment.application, "testId") {
             @Override
             protected void addAllDetectors(Context context) {
@@ -184,12 +184,12 @@ public class PossumCoreTest {
     }
 
     @Test
-    public void testMissingPermissionsMethod() throws Exception {
+    public void testMissingPermissionsMethod() {
         // TODO: Test Static missingPermissions method
     }
 
     @Test
-    public void testStartListeningWhileAlreadyListening() throws Exception {
+    public void testStartListeningWhileAlreadyListening() {
         Assert.assertTrue(possumCore.startListening());
         Assert.assertFalse(possumCore.startListening());
     }

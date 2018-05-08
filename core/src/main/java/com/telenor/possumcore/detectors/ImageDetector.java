@@ -79,6 +79,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             initializeOpenCV();
         } catch (Exception e) {
             Log.e(tag, "AP: Failed to initialize tensorFlow or openCV:", e);
+            PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Failed to initialize tensorflow:"+e.getLocalizedMessage());
         }
     }
 
@@ -151,6 +152,8 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
                 PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Unable to start camera:"+e.getLocalizedMessage());
                 Log.i(tag, "AP: IO:", e);
             }
+        } else {
+            PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Unable to start cam:"+isEnabled()+","+isAvailable());
         }
     }
 
@@ -161,37 +164,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         if (isPermitted()) {
             if (cameraSource != null) {
                 cameraSource.stop();
-            }
-        }
-    }
-
-    @SuppressWarnings("MissingPermission")
-    @Override
-    public void onPause() {
-        super.onPause();
-        Log.i(tag, "AP: On Pause");
-        if (isPermitted()) {
-            if (cameraSource != null) {
-                cameraSource.stop();
-                Log.i(tag, "AP: On Pause camera stop");
-            }
-        }
-    }
-
-    @SuppressWarnings("MissingPermission")
-    @Override
-    public void onResume() {
-        super.onResume();
-        Log.i(tag, "AP: On Resume");
-        if (isPermitted()) {
-            try {
-                if (cameraSource != null) {
-                    cameraSource.start();
-                    Log.i(tag, "AP: On Resume camera restart");
-                }
-            } catch (IOException e) {
-                PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Unable to start camera onResume:"+e.getLocalizedMessage());
-                Log.e(tag, "AP:Failed to restart camera:",e);
             }
         }
     }
@@ -610,22 +582,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         return byteArrayOutputStream.toByteArray();
     }
 
-/*    public static Matrix affineTransform(float width, float height, PointF leftEye, PointF rightEye, PointF mouth) {
-        Matrix src = new Matrix();
-        Matrix dest = new Matrix();
-
-        // our reference points (source)
-        src.mapPoints(new float[]{leftEye.x, leftEye.y, rightEye.x, rightEye.y, mouth.x, mouth.y});
-        // http://openface-api.readthedocs.io/en/latest/openface.html
-        // Alex: calculated from python script where inner eyes are interpolated from four eye points (also norm min/max)
-        dest.mapPoints(new float[]{ (float) (width * 0.70726717), (float) (height * 0.1557629),
-                (float) (width * 0.27657071), (float) (height * 0.16412275),
-                (float) (width * 0.50020397), (float) (height * 0.75058442)});
-        Matrix matrixTransformation = new Matrix();
-
-        return matrixTransformation;
-    }*/
-
     protected TensorWeights createTensor(AssetManager assetManager, String modelName) {
         return new TensorWeights(assetManager, modelName);
     }
@@ -633,6 +589,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     @Override
     public void cleanUp() {
         super.cleanUp();
+        PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Terminated/Cleaned camera");
         if (detector != null) {
             detector.destroy();
             detector = null;

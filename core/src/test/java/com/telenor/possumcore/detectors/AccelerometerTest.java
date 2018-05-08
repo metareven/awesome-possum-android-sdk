@@ -37,7 +37,7 @@ public class AccelerometerTest {
     private Accelerometer accelerometer;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         SensorManager sensorManager = (SensorManager) RuntimeEnvironment.application.getSystemService(Context.SENSOR_SERVICE);
         Assert.assertNotNull(sensorManager);
@@ -47,12 +47,12 @@ public class AccelerometerTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         accelerometer = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(accelerometer);
         Assert.assertEquals(DetectorType.Accelerometer, accelerometer.detectorType());
         Assert.assertEquals("accelerometer", accelerometer.detectorName());

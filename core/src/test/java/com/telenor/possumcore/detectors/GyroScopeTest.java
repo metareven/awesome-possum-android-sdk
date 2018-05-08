@@ -37,7 +37,7 @@ public class GyroScopeTest {
     private GyroScope gyroScope;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         SensorManager sensorManager = (SensorManager) RuntimeEnvironment.application.getSystemService(Context.SENSOR_SERVICE);
         Assert.assertNotNull(sensorManager);
@@ -47,12 +47,12 @@ public class GyroScopeTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         gyroScope = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(gyroScope);
         Assert.assertEquals(DetectorType.Gyroscope, gyroScope.detectorType());
         Assert.assertEquals("gyroscope", gyroScope.detectorName());

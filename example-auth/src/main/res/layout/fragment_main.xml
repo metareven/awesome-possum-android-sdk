@@ -26,12 +26,12 @@
         android:layout_centerHorizontal="true"
         android:layout_below="@id/status"
         android:layout_height="250dp" />
-    <com.telenor.possumauth.example.views.IconWheel
+   <!-- <com.telenor.possumauth.example.views.IconWheel
         android:id="@+id/iconWheel"
         android:layout_width="300dp"
         android:layout_centerHorizontal="true"
         android:layout_below="@id/status"
-        android:layout_height="300dp" />
+        android:layout_height="300dp" />-->
 
     <RelativeLayout
         android:id="@+id/graphContainer"

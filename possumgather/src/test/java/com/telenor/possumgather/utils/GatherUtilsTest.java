@@ -13,22 +13,22 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 public class GatherUtilsTest {
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
     }
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
 
     }
     @Test
-    public void testGetFiles() throws Exception {
+    public void testGetFiles() {
         //GatherUtils.getFiles()
     }
     @Test
-    public void testCreateZipStream() throws Exception {
+    public void testCreateZipStream() {
         //GatherUtils.createZipStream()
     }
     @Test
-    public void testStorageCatalogue() throws Exception {
+    public void testStorageCatalogue() {
         //GatherUtils.storageCatalogue()
     }
 }

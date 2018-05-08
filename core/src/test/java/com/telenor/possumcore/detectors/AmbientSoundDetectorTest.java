@@ -50,12 +50,12 @@ public class AmbientSoundDetectorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         ambientSoundDetector = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(ambientSoundDetector);
         Assert.assertEquals(DetectorType.Audio, ambientSoundDetector.detectorType());
         Assert.assertEquals("sound", ambientSoundDetector.detectorName());
@@ -72,7 +72,7 @@ public class AmbientSoundDetectorTest {
     }
 
     @Test
-    public void testAvailable() throws Exception {
+    public void testAvailable() {
         Assert.assertTrue(ambientSoundDetector.isAvailable());
         ShadowApplication.getInstance().denyPermissions(Manifest.permission.RECORD_AUDIO);
         Assert.assertFalse(ambientSoundDetector.isAvailable());

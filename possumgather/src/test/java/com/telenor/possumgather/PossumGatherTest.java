@@ -22,7 +22,7 @@ public class PossumGatherTest {
     private PossumGather possumGather;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         TestUtils.initializeJodaTime();
         possumGather = new PossumGather(RuntimeEnvironment.application, "testUser") {
@@ -34,17 +34,17 @@ public class PossumGatherTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         possumGather = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(possumGather);
     }
 
     @Test
-    public void testIsUploading() throws Exception {
+    public void testIsUploading() {
         Assert.assertFalse(possumGather.isUploading(RuntimeEnvironment.application));
         // TODO: Test while uploading as well
     }

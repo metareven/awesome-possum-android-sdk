@@ -1,11 +1,9 @@
 package com.telenor.possumauth.example.dialogs;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatDialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,15 +15,15 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.telenor.possumauth.example.AppConstants;
+import com.telenor.possumauth.example.GraphUtil;
 import com.telenor.possumauth.example.R;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class GraphSelectionDialog extends AppCompatDialogFragment {
     private GraphAdapter myAdapter;
@@ -58,28 +56,24 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
     }
 
     protected class GraphObject {
-        private final JsonObject object;
+        private String name;
+        private boolean isShown;
 
-        GraphObject(@NonNull JsonObject object) {
-            this.object = object;
+        GraphObject(String name, boolean isShown) {
+            this.name = name;
+            this.isShown = isShown;
         }
 
         String name() {
-            return object.get("name").getAsString();
+            return name;
         }
 
         boolean isShown() {
-            return object.get("isShown").getAsBoolean();
+            return isShown;
         }
 
         void toggleChecked() {
-            boolean newValue = !isShown();
-            object.remove("isShown");
-            object.addProperty("isShown", newValue);
-        }
-
-        JsonObject toJson() {
-            return object;
+            isShown = !isShown;
         }
     }
 
@@ -130,15 +124,11 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
                 missingTextField.setVisibility(View.VISIBLE);
                 return;
             }
-            String storedPrefs = preferences.getString(AppConstants.STORED_GRAPH_DISPLAY, null);
+            JsonObject storedPrefs = (JsonObject) GraphUtil.parser().parse(preferences.getString(AppConstants.STORED_GRAPH_DISPLAY, "{}"));
             objects.clear();
-            if (storedPrefs != null) {
-                JsonParser parser = new JsonParser();
-                JsonArray storedArray = parser.parse(storedPrefs).getAsJsonArray();
-                for (JsonElement el : storedArray) {
-                    JsonObject obj = el.getAsJsonObject();
-                    objects.add(new GraphObject(obj));
-                }
+            for (Map.Entry<String, JsonElement> entry : storedPrefs.entrySet()) {
+                boolean visible = storedPrefs.get(entry.getKey()).getAsBoolean();
+                objects.add(new GraphObject(entry.getKey(), visible));
             }
             recyclerView.setVisibility(objects.size() == 0 ? View.GONE : View.VISIBLE);
             missingTextField.setVisibility(objects.size() == 0 ? View.VISIBLE : View.GONE);
@@ -151,13 +141,11 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
 
         void saveCurrent() {
             if (preferences == null) return;
-            SharedPreferences.Editor editor = preferences.edit();
-            JsonArray saveArray = new JsonArray();
+            JsonObject saveObject = new JsonObject();
             for (GraphObject obj : objects) {
-                saveArray.add(obj.toJson());
+                saveObject.addProperty(obj.name(), obj.isShown());
             }
-            editor.putString(AppConstants.STORED_GRAPH_DISPLAY, saveArray.toString());
-            editor.apply();
+            preferences.edit().putString(AppConstants.STORED_GRAPH_DISPLAY, saveObject.toString()).apply();
         }
 
         @Override

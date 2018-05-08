@@ -17,23 +17,23 @@ public class PossumAuthTest {
     private PossumAuth possumAuth;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         TestUtils.initializeJodaTime();
         possumAuth = new PossumAuth(RuntimeEnvironment.application, "testUser", "fakeUploadUrl");
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         possumAuth = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(possumAuth);
     }
 
     @Test
-    public void testDetectorsAreAllThere() throws Exception {
+    public void testDetectorsAreAllThere() {
         Assert.assertEquals(8, possumAuth.detectors().size());
     }
 }

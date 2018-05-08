@@ -16,17 +16,17 @@ public class FaceTrackerTest {
     private FaceTracker faceTracker;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         faceTracker = new FaceTracker();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         faceTracker = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         faceTracker.onDone();
         faceTracker.onMissing(null);
         faceTracker.onNewItem(0, null);

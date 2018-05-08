@@ -119,7 +119,7 @@ public abstract class PossumCore implements IDetectorChange {
                 continue;
             executorService.submit(detector);
         }
-        Log.d(tag, "AP: Start listening");
+//        Log.d(tag, "AP: Start listening");
         status.set(CoreStatus.Running);
         if (timeOut > 0)
             handler.postDelayed(this::stopListening, timeOut);
@@ -163,7 +163,8 @@ public abstract class PossumCore implements IDetectorChange {
         switch (status.get()) {
             case CoreStatus.Running:
                 // Correctly (presumably) called pause when exiting app. Pausing detectors.
-                for (AbstractDetector detector : detectors) detector.onPause();
+//                for (AbstractDetector detector : detectors) detector.terminate();
+                stopListening();
                 setStatus(CoreStatus.Paused);
                 break;
         }
@@ -179,16 +180,9 @@ public abstract class PossumCore implements IDetectorChange {
      * Handles an effective restart of eventual paused app due to interruption in progress
      */
     public void onResume() {
-        switch (status.get()) {
-            case CoreStatus.Paused:
-                // Ez way: startListening() - causes problems with deleting data set gathered so far
-                for (AbstractDetector detector : detectors) detector.onResume();
-                status.set(CoreStatus.Running);
-                break;
-            case CoreStatus.Running:
-                // Obviously someone missed a call to onPause. How to handle?
-                Log.e(tag, "AP: You are missing a call to onPause. This could cause problems with camera/microphone lockups. Remember to call onPause when exiting app");
-                break;
+        if (status.get() == CoreStatus.Paused) {
+            // Ez way: startListening() - causes problems with deleting data set gathered so far
+            startListening();
         }
     }
 
@@ -327,7 +321,7 @@ public abstract class PossumCore implements IDetectorChange {
             for (AbstractDetector detector : detectors)
                 detector.terminate();
             status.set(CoreStatus.Idle);
-            Log.i(tag, "AP: Stop Listening");
+//            Log.i(tag, "AP: Stop Listening");
         }
     }
 

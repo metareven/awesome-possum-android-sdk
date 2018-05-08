@@ -69,7 +69,12 @@ public class LogFragment extends TrustFragment {
     }
 
     @Override
-    public void detectorValues(String detectorName, String dataSetName, int graphPos, float score, float training) {
+    public void detectorValues(String graphName, int graphPos, float score, float training) {
+
+    }
+
+    @Override
+    public void updateVisibility(String graphName, boolean visible) {
 
     }
 

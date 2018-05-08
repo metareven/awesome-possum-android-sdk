@@ -26,22 +26,22 @@ public class FaceProcessorTest {
     private FaceProcessor faceProcessor;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         faceProcessor = new FaceProcessor(mockedDetector, mockedTracker);
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         faceProcessor = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(faceProcessor);
     }
     @Test
-    public void testSelectFocusReturnsZero() throws Exception {
+    public void testSelectFocusReturnsZero() {
         Assert.assertEquals(0, faceProcessor.selectFocus(null));
     }
 }

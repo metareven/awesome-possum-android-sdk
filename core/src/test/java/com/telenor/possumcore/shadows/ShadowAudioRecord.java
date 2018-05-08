@@ -68,6 +68,6 @@ public class ShadowAudioRecord {
     }
 
     public void setMinBufferSize(final int minBufferSize) {
-        this.minBufferSize = minBufferSize;
+        ShadowAudioRecord.minBufferSize = minBufferSize;
     }
 }

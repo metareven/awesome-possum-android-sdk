@@ -1,6 +1,5 @@
 package com.telenor.possumauth.example;
 
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -25,15 +24,18 @@ import com.telenor.possumauth.example.fragments.MainFragment;
 import com.telenor.possumauth.example.fragments.TrustFragment;
 import com.telenor.possumauth.interfaces.IAuthCompleted;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements IAuthCompleted {
+public class MainActivity extends AppCompatActivity implements IAuthCompleted, SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String tag = MainActivity.class.getName();
     private SharedPreferences preferences;
     private PossumAuth possumAuth;
     private JsonParser parser;
     private int graphPosition;
+    private JsonObject graphVisibility;
 
     @Override
     public void onCreate(Bundle bundle) {
@@ -42,6 +44,8 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
         parser = new JsonParser();
         graphPosition = 0;
         preferences = getSharedPreferences(AppConstants.SHARED_PREFERENCES, MODE_PRIVATE);
+        preferences.registerOnSharedPreferenceChangeListener(this);
+        graphVisibility = GraphUtil.graphVisibility(preferences);
         String userId = myId();
         possumAuth = new PossumAuth(getApplicationContext(), userId, getString(R.string.authentication_url), getString(R.string.apiKey));
         possumAuth.addAuthListener(this);
@@ -66,11 +70,13 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
             Log.i(tag, "AP: Msg:" + message);
             for (Map.Entry<String, JsonElement> entry : sensors.entrySet()) {
                 String detectorName = entry.getKey();
+                String shortName = GraphUtil.shortHand(detectorName);
                 JsonArray arr = entry.getValue().getAsJsonArray();
                 for (JsonElement el : arr) {
                     JsonObject graphObj = el.getAsJsonObject();
-                    String dataSetName = graphObj.get("name").getAsString();
-                    ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).detectorValues(detectorName, dataSetName, graphPosition, graphObj.get("score").getAsFloat(), graphObj.get("status").getAsFloat());
+                    String shortDataSetName = GraphUtil.shortHand(graphObj.get("name").getAsString());
+                    String graphName = String.format(Locale.US, "%s:%s", shortName, shortDataSetName);
+                    ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).detectorValues(graphName, graphPosition, graphObj.get("score").getAsFloat(), graphObj.get("status").getAsFloat());
                 }
             }
             Send.message(getApplicationContext(), Messaging.AUTH_RETURNED);
@@ -88,38 +94,40 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
     }
 
     private void updateSharedPreferences(JsonObject object) {
-        SharedPreferences prefs = getSharedPreferences(AppConstants.SHARED_PREFERENCES, MODE_PRIVATE);
-        JsonArray alreadyStoredData = (JsonArray) parser.parse(prefs.getString("StoredGraphDisplay", "[]"));
-        SharedPreferences.Editor editor = prefs.edit();
         JsonObject sensorsObject = object.getAsJsonObject("sensors");
-        JsonArray storedData = new JsonArray();
-
-        for (Map.Entry<String, JsonElement> entry : sensorsObject.entrySet()) {
-            String detectorName = entry.getKey();
-            JsonArray arr = entry.getValue().getAsJsonArray();
-            for (JsonElement el : arr) {
-                JsonObject graphObj = el.getAsJsonObject();
-                String name = graphObj.get("name").getAsString();
-                String fullName = String.format("%s:%s", detectorName, name);
-                boolean alreadyExists = false;
-                for (JsonElement elStored : alreadyStoredData) {
-                    JsonObject objStored = elStored.getAsJsonObject();
-                    if (fullName.equals(objStored.get("name").getAsString())) {
-                        alreadyExists = true;
-                        storedData.add(objStored);
-                        break;
-                    }
-                }
-                if (!alreadyExists) {
-                    JsonObject graph = new JsonObject();
-                    graph.addProperty("name", fullName);
-                    graph.addProperty("isShown", false);
-                    storedData.add(graph);
-                }
+        JsonObject oldStoredData = (JsonObject) parser.parse(preferences.getString(AppConstants.STORED_GRAPH_DISPLAY, "{}"));
+        List<String> oldGraphs = new ArrayList<>();
+        for (Map.Entry<String, JsonElement> entry : oldStoredData.entrySet())
+            oldGraphs.add(entry.getKey());
+        List<String> newGraphs = new ArrayList<>();
+        for (String sensorName : GraphUtil.sensorNames(sensorsObject)) {
+            String shortSensor = GraphUtil.shortHand(sensorName);
+            JsonArray dataSets = sensorsObject.getAsJsonArray(sensorName);
+            for (JsonElement dataSetEl : dataSets) {
+                JsonObject dataSet = dataSetEl.getAsJsonObject();
+                String shortDataSetName = GraphUtil.shortHand(dataSet.get("name").getAsString());
+                String graphName = String.format(Locale.US, "%s:%s", shortSensor, shortDataSetName);
+                newGraphs.add(graphName);
             }
         }
-        editor.putString("StoredGraphDisplay", storedData.toString());
-        editor.apply();
+        // in old & in new -> keep
+        // not in old & in new -> add
+        // in old & not in new -> delete
+        List<String> adds = new ArrayList<>(newGraphs);
+        adds.removeAll(oldGraphs);
+        List<String> deletes = new ArrayList<>(oldGraphs);
+        deletes.removeAll(newGraphs);
+        if (adds.size() > 0 || deletes.size() > 0) {
+            JsonObject obj = new JsonObject();
+            for (String graphName : newGraphs) {
+                obj.addProperty(graphName, false);
+            }
+            preferences.edit().putString(AppConstants.STORED_GRAPH_DISPLAY, obj.toString()).apply();
+        }
+    }
+
+    public JsonObject graphVisibility() {
+        return graphVisibility;
     }
 
     @Override
@@ -169,14 +177,12 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
     @Override
     public void onPause() {
         super.onPause();
-        Log.i(tag, "AP: MainActivity onPause");
         possumAuth.onPause();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        Log.i(tag, "AP: MainActivity onResume");
         possumAuth.onResume();
     }
 
@@ -221,5 +227,15 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted {
 
     public boolean validId(String uniqueId) {
         return uniqueId != null && uniqueId.length() > 2;
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        graphVisibility = (JsonObject)GraphUtil.parser().parse(sharedPreferences.getString(AppConstants.STORED_GRAPH_DISPLAY, "{}"));
+        for (Map.Entry<String, JsonElement> entry : graphVisibility.entrySet()) {
+            String graph = entry.getKey();
+            boolean visible = entry.getValue().getAsBoolean();
+            ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).updateVisibility(graph, visible);
+        }
     }
 }

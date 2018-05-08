@@ -48,12 +48,12 @@ public class NetworkDetectorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         networkDetector = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(networkDetector);
         Assert.assertEquals(DetectorType.Network, networkDetector.detectorType());
         Assert.assertEquals("network", networkDetector.detectorName());
@@ -86,7 +86,7 @@ public class NetworkDetectorTest {
     }
 
     @Test
-    public void testEnabled() throws Exception {
+    public void testEnabled() {
         Assert.assertTrue(networkDetector.isEnabled());
     }
 

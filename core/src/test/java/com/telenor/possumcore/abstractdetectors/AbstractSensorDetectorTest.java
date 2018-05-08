@@ -48,7 +48,7 @@ public class AbstractSensorDetectorTest {
     private IDetectorChange detectorChange;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         TestUtils.initializeJodaTime();
         when(mockedContext.getApplicationContext()).thenReturn(mockedContext);
@@ -76,22 +76,22 @@ public class AbstractSensorDetectorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         abstractSensorDetector = null;
     }
 
     @Test
-    public void testInitialize() throws Exception {
+    public void testInitialize() {
         Assert.assertNotNull(abstractSensorDetector);
     }
 
     @Test
-    public void testEnabled() throws Exception {
+    public void testEnabled() {
         Assert.assertTrue(abstractSensorDetector.isEnabled());
     }
 
     @Test
-    public void testUnableToFindSensorManager() throws Exception {
+    public void testUnableToFindSensorManager() {
         when(mockedContext.getSystemService(Context.SENSOR_SERVICE)).thenReturn(null);
         abstractSensorDetector = new AbstractSensorDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, detectorChange) {
             @Override
@@ -113,7 +113,7 @@ public class AbstractSensorDetectorTest {
     }
 
     @Test
-    public void testUnableToFindSensor() throws Exception {
+    public void testUnableToFindSensor() {
         when(mockedSensorManager.getDefaultSensor(anyInt())).thenReturn(null);
         abstractSensorDetector = new AbstractSensorDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, detectorChange) {
             @Override
@@ -142,13 +142,13 @@ public class AbstractSensorDetectorTest {
     }
 
     @Test
-    public void testPowerUsageCheck() throws Exception {
+    public void testPowerUsageCheck() {
         when(mockedSensor.getPower()).thenReturn(10f);
         Assert.assertEquals(10f, abstractSensorDetector.powerUsage(), 0);
     }
 
     @Test
-    public void testRunRegistersListener() throws Exception {
+    public void testRunRegistersListener() {
         abstractSensorDetector = new AbstractSensorDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, detectorChange) {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
@@ -171,14 +171,14 @@ public class AbstractSensorDetectorTest {
     }
 
     @Test
-    public void testDetectorChangeStatus() throws Exception {
+    public void testDetectorChangeStatus() {
         verify(detectorChange, times(0)).detectorChanged(any(AbstractSensorDetector.class));
         abstractSensorDetector.detectorStatusChanged();
         verify(detectorChange, times(1)).detectorChanged(any(AbstractSensorDetector.class));
     }
 
     @Test
-    public void testTerminateRemovesListener() throws Exception {
+    public void testTerminateRemovesListener() {
         abstractSensorDetector = new AbstractSensorDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, detectorChange) {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
@@ -237,7 +237,7 @@ public class AbstractSensorDetectorTest {
     }
 
     @Test
-    public void testGetAccuracy() throws Exception {
+    public void testGetAccuracy() {
         Assert.assertEquals(SensorManager.SENSOR_STATUS_ACCURACY_HIGH, abstractSensorDetector.currentAccuracy());
     }
 }

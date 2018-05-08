@@ -41,8 +41,8 @@ public abstract class AbstractSensorDetector extends AbstractDetector implements
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
+    public void onResume(boolean continueRunning) {
+        super.onResume(continueRunning);
         sensorManager.registerListener(this, sensor, MIN_INTERVAL_MICRO);
     }
 

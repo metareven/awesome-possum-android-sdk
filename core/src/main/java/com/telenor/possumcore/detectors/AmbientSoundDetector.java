@@ -133,19 +133,22 @@ public class AmbientSoundDetector extends AbstractDetector {
         }
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        // TODO: Find out if it should start up or not
-    }
+/*    @Override
+    public void onResume(boolean continueRunning) {
+        super.onResume(continueRunning);
+        if (continueRunning && !isRecording()) {
+            run();
+            // TODO: Confirm working
+        }
+    }*/
 
-    @Override
+/*    @Override
     public void onPause() {
         super.onPause();
         if (isRecording()) {
             stopRecording();
         }
-    }
+    }*/
 
     /**
      * Returns whether it is actually recording
