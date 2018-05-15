@@ -4,7 +4,6 @@ import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.telenor.possumauth.interfaces.IAuthCompleted;
 
@@ -38,19 +37,36 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
         InputStream is = null;
         Exception exception = null;
         JsonObject object = params[0];
+/*        Log.i(tag, "APP: -------------------------------------------------------------------------");
+        for (Map.Entry<String, JsonElement> el :  object.entrySet()) {
+            String key = el.getKey();
+            if (el.getValue().isJsonArray()) {
+                byte[] temp = el.getValue().getAsJsonArray().toString().getBytes();
+                int size = (temp.length/1000);
+                if (size == 0) {
+                    Log.i(tag, "APP: "+key+" -> "+temp.length+"B");
+                } else {
+                    Log.i(tag, "APP: "+key+" -> "+(temp.length/1000)+"KB");
+                }
+            }
+        }*/
         try {
             byte[] data = object.toString().getBytes();
-/*          // Zip data
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ZipOutputStream zipOut = new ZipOutputStream(bos);
-            ZipEntry entry = new ZipEntry("data");
-            zipOut.putNextEntry(entry);
-            zipOut.write(data);
-            zipOut.close();
-            byte[] dataZipped = bos.toByteArray();*/
+            //// Zip data
+            //  ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            //  ZipOutputStream zipOut = new ZipOutputStream(bos);
+            //  ZipEntry entry = new ZipEntry("data");
+            //  zipOut.putNextEntry(entry);
+            //  zipOut.write(data);
+            //  zipOut.close();
+            //  byte[] dataZipped = bos.toByteArray();
 
-            Log.i(tag, "AP: Start connection to auth - uploading:"+(data.length/1000)+" KB");
+            Log.i(tag, "AP: Start connection to auth - uploading:" + (data.length / 1000) + " KB");
             long startTime = System.currentTimeMillis();
+//            successMessage = "{\"sensors\": {\"bluetooth\": [{\"name\": \"default\", \"score\": 0, \"status\": 0}], \"gac\": [{\"name\": \"default\", \"score\": 0.8024234771728516, \"status\": 1.0}], \"image\": [{\"name\": \"default\", \"score\": 0, \"status\": 0}], \"network\": [{\"name\": \"default\", \"score\": 0.0, \"status\": \"1.0\"}, {\"name\": \"binary\", \"score\": 0.0, \"status\": \"1.0\"}], \"sound\": [{\"name\": \"classic\", \"score\": 1.0, \"status\": 1.0}]}, \"trustscore\": [{\"name\": \"default\", \"score\": 0.3604846954345703, \"status\": 0}]}";
+//            responseMessage = "200 OK";
+//            return null;
+
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestProperty("x-api-key", apiKey);
             urlConnection.setConnectTimeout(0); // These timeouts should be removed later
@@ -64,7 +80,7 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
             os.write(data);
             int responseCode = urlConnection.getResponseCode();
             responseMessage = urlConnection.getResponseMessage();
-            Log.d(tag, "AP: "+responseCode + " -> " + responseMessage);
+            Log.d(tag, "AP: " + responseCode + " -> " + responseMessage);
             is = urlConnection.getInputStream();
             StringBuilder output = new StringBuilder();
             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
@@ -72,7 +88,7 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
             while ((line = reader.readLine()) != null)
                 output.append(line);
             successMessage = output.toString();
-            Log.i(tag, "AP: Received upload - time spent:"+((System.currentTimeMillis()-startTime)/1000)+" seconds, bytes uploaded:"+data.length);
+            Log.i(tag, "AP: Received upload - time spent:" + ((System.currentTimeMillis() - startTime) / 1000) + " seconds, bytes uploaded:" + data.length);
         } catch (Exception e) {
             Log.e(tag, "AP: Ex:", e);
             exception = e;

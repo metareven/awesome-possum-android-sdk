@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractReceiverDetector;
@@ -24,7 +25,8 @@ import com.telenor.possumcore.interfaces.IDetectorChange;
 public class LocationDetector extends AbstractReceiverDetector implements LocationListener {
     private LocationManager locationManager;
     private Handler locationHandler;
-    private static final long maxScanTime = 60*1000;
+    private static final int minTimePositionInterval = 1000; // Least amount of time between positions
+//    private static final long maxScanTime = 60*1000;
 
     public LocationDetector(@NonNull Context context) {
         this(context, null);
@@ -44,7 +46,7 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
      */
     @Override
     public boolean isAvailable() {
-        return super.isAvailable() && (isProviderAvailable(LocationManager.GPS_PROVIDER) || isProviderAvailable(LocationManager.NETWORK_PROVIDER));
+        return super.isAvailable() && locationManager != null && locationManager.getProviders(true).size() > 0;
     }
 
     /**
@@ -58,19 +60,10 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
         return locationManager != null && !locationManager.getAllProviders().isEmpty();
     }
 
-    /**
-     * Confirms whether use has allowed to use a specific provider
-     *
-     * @param provider the provider to check for
-     * @return true if provider is permitted and available, false if not
-     */
-    private boolean isProviderAvailable(String provider) {
-        return isPermitted() && locationManager != null && locationManager.isProviderEnabled(provider);
-    }
-
     protected Handler getHandler() {
         return new Handler(Looper.getMainLooper());
     }
+
     /**
      * Ensures no updates are running, removing them if it is already being used. This can cause
      * a problem for authentication when the low timespan of auth can cause a lot of attempts to
@@ -84,39 +77,36 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
     }
 
     /**
-     * The actual gathering of a location. Atm it will consistently
+     * The actual gathering of a location. Atm it will consistently poll for locations until it is
+     * terminated. It will also stop when you exit the app (and restart when reentering - if it
+     * was running when exited)
      */
+    @SuppressWarnings("MissingPermission")
     @Override
     public void run() {
-        // Only scan if enabled and available, a last location is missing or the lastLocation is at least 10 minutes since
         super.run();
         if (isEnabled() && isAvailable()) {
-            Location lastLocation = lastLocation();
-            if (lastLocation == null || lastLocation.getTime() < (now() - 10 * 60 * 1000)) {
-                locationHandler.postDelayed(this::terminate, maxScanTime);
-                if (isProviderAvailable(LocationManager.GPS_PROVIDER))
-                    requestProviderPosition(LocationManager.GPS_PROVIDER);
-                if (isProviderAvailable(LocationManager.NETWORK_PROVIDER))
-                    requestProviderPosition(LocationManager.NETWORK_PROVIDER);
-            } else {
-                onLocationChanged(lastLocation);
+//            locationHandler.postDelayed(this::terminate, maxScanTime); // Note: Max scan time to prevent overuse of battery
+            onLocationChanged(lastLocation());
+            for (String provider : locationManager.getProviders(true)) {
+                requestProviderPositions(provider);
             }
         }
     }
 
     /**
-     * The actual requester of position. Can be overridden for use-cases where a single position is
-     * not valid, in effect for the data gathering component. Caution, this method ignores
-     * permissions as it is intended to be used in the run() method where permission is confirmed
-     * before it is called. Do not call this method by itself.
+     * The actual requester of position. Can be overridden for use-cases where a multiple locations
+     * is not desired. Caution, this method ignores permissions as it is intended to be used in the
+     * run() method where permission is confirmed before it is called. Do not call this method by
+     * itself.
      *
      * @param provider the provider it should gather for, either LocationManager.GPS_PROVIDER or
      *                 LocationManager.NETWORK_PROVIDER
      */
     @SuppressWarnings("MissingPermission")
-    protected void requestProviderPosition(@NonNull String provider) {
+    protected void requestProviderPositions(@NonNull String provider) {
         if (locationManager != null) {
-            locationManager.requestSingleUpdate(provider, this, Looper.myLooper());
+            locationManager.requestLocationUpdates(provider, minTimePositionInterval, 0, this, Looper.getMainLooper());
         }
     }
 
@@ -148,6 +138,7 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
         JsonArray array = new JsonArray();
         array.add("" + now());
 //        array.add("" + location.getTime());
+        // TODO: Get @alex on backend to fix format so it accepts the positions timestamp as well
         array.add("" + location.getLatitude());
         array.add("" + location.getLongitude());
         array.add("" + location.getAltitude());

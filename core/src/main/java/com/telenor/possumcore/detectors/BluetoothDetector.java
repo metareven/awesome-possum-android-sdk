@@ -27,7 +27,7 @@ public class BluetoothDetector extends AbstractReceiverDetector {
     private BluetoothAdapter bluetoothAdapter;
     private Handler handler = new Handler();
     private static final String scanDataSet = "bluetooth_scan";
-    private static final long maxScanTime = 12000; // 12 seconds is maximum scan time
+//    private static final long maxScanTime = 12000; // 12 seconds is maximum scan time
     private static final int[] allStates = {BluetoothProfile.STATE_CONNECTED,
                                             BluetoothProfile.STATE_DISCONNECTED,
                                             BluetoothProfile.STATE_CONNECTING,
@@ -125,15 +125,12 @@ public class BluetoothDetector extends AbstractReceiverDetector {
             }
             bluetoothAdapter.getProfileProxy(context(), serviceListener, BluetoothProfile.A2DP);
             bluetoothAdapter.getProfileProxy(context(), serviceListener, BluetoothProfile.HEALTH);
-            // Start scan if long scan
-            if (isLongScanDoable()) {
-                if (isBLEDevice()) {
-                    // Start BLE scan
-                    scanBLE();
-                } else {
-                    // Start regular scan
-                    scanRegular();
-                }
+            if (isBLEDevice()) {
+                // Start BLE scan
+                scanBLE();
+            } else {
+                // Start regular scan
+                scanRegular();
             }
         }
     }
@@ -144,7 +141,7 @@ public class BluetoothDetector extends AbstractReceiverDetector {
     private void scanRegular() {
         if (!bluetoothAdapter.isDiscovering()) {
             bluetoothAdapter.startDiscovery();
-            handler.postDelayed(this::terminate, maxScanTime);
+  //          handler.postDelayed(this::terminate, maxScanTime);
         }
     }
 
@@ -166,7 +163,7 @@ public class BluetoothDetector extends AbstractReceiverDetector {
         ScanSettings.Builder scanSettingsBuilder = new ScanSettings.Builder();
         scanSettingsBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
         bluetoothAdapter.getBluetoothLeScanner().startScan(null, scanSettingsBuilder.build(), bleScanCallback);
-        handler.postDelayed(this::terminate, maxScanTime);
+    //    handler.postDelayed(this::terminate, maxScanTime);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)

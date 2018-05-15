@@ -15,8 +15,11 @@ import org.joda.time.DateTime;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Basic detector abstract, storing all needed components needed to detect and run. Even if not
@@ -26,6 +29,7 @@ import java.util.Map;
 public abstract class AbstractDetector implements Runnable {
     private Context context;
     private String uniqueUserId;
+    private AtomicBoolean isRunning = new AtomicBoolean(false);
     protected Map<String, List<JsonArray>> dataStored = new HashMap<>();
     protected static final String tag = AbstractDetector.class.getName();
     protected static final String defaultSet = "default";
@@ -139,6 +143,7 @@ public abstract class AbstractDetector implements Runnable {
 
     @Override
     public void run() {
+        isRunning.set(true);
         for (List<JsonArray> data : dataStored.values()) {
             data.clear();
         }
@@ -238,20 +243,20 @@ public abstract class AbstractDetector implements Runnable {
     }
 
     /**
-     * Method for checking whether to use extra power and time for detailed scan (like gps scans,
-     * bluetooth and other time consuming scans)
-     *
-     * @return true if available, false if not. Note should be overridden if desired only. Will
-     * consume more power and time
+     * Clean up detector dependencies after runs/auths/data gatherings.
      */
-    protected boolean isLongScanDoable() {
-        return false;
+    public void terminate() {
+        isRunning.set(false);
     }
 
     /**
-     * Clean up detector dependencies after runs/auths/data gatherings.
+     * Confirms whether detector is currently running or if it has stopped
+     *
+     * @return true if still running, false if stopped
      */
-    public abstract void terminate();
+    public boolean isRunning() {
+        return isRunning.get();
+    }
 
     /**
      * Final cleanup when Awesome Possum is completely done. Only necessary for some detectors
@@ -261,14 +266,26 @@ public abstract class AbstractDetector implements Runnable {
 
     /**
      * Gives the detectors stored data as a restful json object
+     * Also clears data, so be careful. Make sure data is sent and not lost.
+     * Locks system while it is retrieved so no concurrency is retrieved
      *
      * @return a jsonArray for all the data
      */
-    public JsonArray jsonData(String dataSet) {
+    public synchronized JsonArray jsonData(String dataSet) {
         JsonArray outputArr = new JsonArray();
-        for (JsonArray arr : dataStored.get(dataSet)) {
+        List<JsonArray> data = dataStored.get(dataSet);
+        for (JsonArray arr : data) {
             outputArr.add(arr);
         }
+        dataStored.put(dataSet, new ArrayList<>()); // Clearing the dataSet
         return outputArr;
+    }
+
+    /**
+     * Returns the keys of the data stored
+     * @return a set of the keys
+     */
+    public synchronized Set<String> jsonKeys() {
+        return new HashSet<>(dataStored.keySet());
     }
 }

@@ -335,7 +335,7 @@ public class LocationDetectorTest {
         when(mockedContext.getSystemService(Context.LOCATION_SERVICE)).thenReturn(mockedLocationManager);
         locationDetector = new LocationDetector(mockedContext);
         verify(mockedLocationManager, times(0)).requestSingleUpdate(matches("gps"), any(LocationListener.class), any(Looper.class));
-        locationDetector.requestProviderPosition(LocationManager.GPS_PROVIDER);
+        locationDetector.requestProviderPositions(LocationManager.GPS_PROVIDER);
         verify(mockedLocationManager, times(1)).requestSingleUpdate(matches("gps"), any(LocationListener.class), any(Looper.class));
     }
 

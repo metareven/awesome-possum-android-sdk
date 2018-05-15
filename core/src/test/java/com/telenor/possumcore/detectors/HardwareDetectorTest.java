@@ -60,9 +60,9 @@ public class HardwareDetectorTest {
         List<JsonArray> dataStored = datas.get("default");
         Assert.assertEquals(1, dataStored.size());
         JsonArray data = dataStored.get(0);
-        Assert.assertEquals(15, data.size());
-        Assert.assertEquals("HARDWARE_INFO START", data.get(0).getAsString());
-        Assert.assertEquals("HARDWARE_INFO STOP", data.get(14).getAsString());
+        Assert.assertEquals(16, data.size());
+        Assert.assertEquals("HARDWARE_INFO START", data.get(1).getAsString());
+        Assert.assertEquals("HARDWARE_INFO STOP", data.get(15).getAsString());
     }
 
     @Config(sdk = Build.VERSION_CODES.KITKAT)
@@ -75,7 +75,7 @@ public class HardwareDetectorTest {
         List<JsonArray> dataStored = datas.get("default");
         Assert.assertEquals(1, dataStored.size());
         JsonArray data = dataStored.get(0);
-        Assert.assertEquals(15, data.size());
+        Assert.assertEquals(16, data.size());
     }
 
     @Test
@@ -96,7 +96,7 @@ public class HardwareDetectorTest {
         Map<String, List<JsonArray>> datas = (Map<String, List<JsonArray>>)dataStoredField.get(hardwareDetector);
         Assert.assertEquals(1, datas.get("permissions").size());
         JsonArray data = datas.get("permissions").get(0);
-        Assert.assertEquals("PERMISSIONS START", data.get(0).getAsString());
+        Assert.assertEquals("PERMISSIONS START", data.get(1).getAsString());
         List<String> perms = new ArrayList<>();
         for (JsonElement el : data)
             perms.add(el.getAsString());

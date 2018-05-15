@@ -67,7 +67,7 @@ public class MainFragment extends TrustFragment {
                         case Messaging.AUTH_VERIFY:
                             status.setText("Communicating with server");
                             trustButton.stopAuthenticate();
-                            possumAuth.stopListening();
+//                            possumAuth.stopListening();
                             possumAuth.authenticate();
                             break;
                         case Messaging.READY_TO_AUTH:
@@ -160,10 +160,9 @@ public class MainFragment extends TrustFragment {
             getContext().getApplicationContext().registerReceiver(receiver, new IntentFilter("PossumMessage"));
             isRegistered = true;
         }
-        //for (AbstractDetector detector : possumAuth.detectors())
-        //    iconWheel.detectorChanged(detector);
-        for (int i = 0; i < adapter.getCount(); i++)
-            possumAuth.addChangeListener(adapter.getItem(i));
+        if (possumAuth.isListening()) {
+            trustButton.authenticate();
+        }
     }
 
     @Override
@@ -174,8 +173,6 @@ public class MainFragment extends TrustFragment {
             isRegistered = false;
         }
         trustButton.stopAuthenticate();
-        for (int i = 0; i < adapter.getCount(); i++)
-            possumAuth.removeChangeListener(adapter.getItem(i));
     }
 
     private String myId() {

@@ -33,10 +33,10 @@ public class AmbientSoundDetector extends AbstractDetector {
     private AudioRecord audioRecorder;
     private Handler audioHandler;
     private final int bufferSize;
-    private final int recordingSamples;
+    //private final int recordingSamples;
     private boolean disabledMute;
     private static int lpc_dimensions = 10;
-    private static final long maxListeningTime = 12000; // Max time to listen in milliseconds
+    //private static final long maxListeningTime = 12000; // Max time to listen in milliseconds
 
     /**
      * number of points
@@ -90,7 +90,7 @@ public class AmbientSoundDetector extends AbstractDetector {
     public AmbientSoundDetector(@NonNull Context context, IDetectorChange listener) {
         super(context, listener);
         // TODO: Clean up class and refactor
-        recordingSamples = (int)(sampleRate() * (maxListeningTime / 1000));
+//        recordingSamples = (int)(sampleRate() * (maxListeningTime / 1000));
         bufferSize = AudioTrack.getMinBufferSize(sampleRate(), AudioFormat.CHANNEL_OUT_MONO, audioEncoding());
         audioHandler = new Handler(Looper.getMainLooper());
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
@@ -180,8 +180,8 @@ public class AmbientSoundDetector extends AbstractDetector {
             }
             //Log.d(tag, "AP: Start recording ambient sound");
             audioRecorder.startRecording();
-            audioHandler.postDelayed(this::terminate, maxListeningTime);
-            while (isRecording() && recordedSamples < recordingSamples) {
+  //          audioHandler.postDelayed(this::terminate, maxListeningTime);
+            while (isRecording()) {// && recordedSamples < recordingSamples) {
              //   Log.i(tag, "AP: Data recording, recorded samples:"+recordedSamples);
                 if ((readSize = audioRecorder.read(buffer, 0, bufferSize)) != AudioRecord.ERROR_INVALID_OPERATION) {
                     // Calculate features

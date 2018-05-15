@@ -195,14 +195,14 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
                 orientation = 90;//360;
                 break;
         }
-        Matrix matrix = new Matrix();
-        matrix.postRotate(orientation);
         byte[] imgBytes = getBytesFromFrame(frame);
         Bitmap imageBeforeProcess = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
         final Bitmap imageProcessed;
-        if (orientation != 0)
+        if (orientation != 0) {
+            Matrix matrix = new Matrix();
+            matrix.postRotate(orientation);
             imageProcessed = Bitmap.createBitmap(imageBeforeProcess, 0, 0, imageBeforeProcess.getWidth(), imageBeforeProcess.getHeight(), matrix, false);
-        else imageProcessed = imageBeforeProcess;
+        } else imageProcessed = imageBeforeProcess;
 
         for (Landmark landmark : face.getLandmarks()) {
             if (landmark.getType() == Landmark.LEFT_EYE) leftEye = landmark.getPosition();
@@ -243,8 +243,9 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             lbpArray.add(parser.parse(gson.toJson(mainLBP(scaledOutput))));
             lbpArray.add(landMarks(face));
             streamData(lbpArray, lbpDataSet);
-
+            PossumCore.addLogEntry(context(), System.currentTimeMillis(),"Face determined and processed");
             isProcessingFace = false;
+            Log.i(tag, "AP: Processed face");
         }
     }
 

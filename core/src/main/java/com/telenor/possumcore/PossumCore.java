@@ -15,7 +15,14 @@ import android.util.Log;
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.constants.Constants;
 import com.telenor.possumcore.constants.CoreStatus;
+import com.telenor.possumcore.detectors.Accelerometer;
+import com.telenor.possumcore.detectors.AmbientSoundDetector;
+import com.telenor.possumcore.detectors.BluetoothDetector;
+import com.telenor.possumcore.detectors.GyroScope;
+import com.telenor.possumcore.detectors.HardwareDetector;
 import com.telenor.possumcore.detectors.ImageDetector;
+import com.telenor.possumcore.detectors.LocationDetector;
+import com.telenor.possumcore.detectors.NetworkDetector;
 import com.telenor.possumcore.interfaces.IDetectorChange;
 
 import java.util.ArrayList;
@@ -101,28 +108,37 @@ public abstract class PossumCore implements IDetectorChange {
     /**
      * Method for quickly adding the relevant detectors, must be overridden
      */
-    protected abstract void addAllDetectors(Context context);
+    protected void addAllDetectors(Context context) {
+        addDetector(new HardwareDetector(context, this));
+        addDetector(new Accelerometer(context, this));
+        addDetector(new AmbientSoundDetector(context, this));
+        addDetector(new GyroScope(context, this));
+        addDetector(new NetworkDetector(context, this));
+        addDetector(new LocationDetector(context, this));
+        addDetector(new ImageDetector(context, this));
+        addDetector(new BluetoothDetector(context, this));
+    }
 
     /**
      * Starts gathering data. Will not access image or sound if program has requested these to not
      * be called.
      *
-     * @return false if no detectors available to start or one of them fails to start or already
-     * listening, else true
+     * @return false if no detectors available to start or already listening, else true
      */
     public boolean startListening() {
         if (status.get() == CoreStatus.Running || detectors == null || detectors.size() == 0)
             return false;
         // Question: What happens if it is paused or processing? Should it start a new data set?
+//        Log.i(tag, "AP: Start Listening");
         for (AbstractDetector detector : detectors) {
             if (detector instanceof ImageDetector && deniedCamera.get())
                 continue;
             executorService.submit(detector);
         }
-//        Log.d(tag, "AP: Start listening");
         status.set(CoreStatus.Running);
-        if (timeOut > 0)
+        if (timeOut > 0) {
             handler.postDelayed(this::stopListening, timeOut);
+        }
         return true;
     }
 
@@ -140,7 +156,7 @@ public abstract class PossumCore implements IDetectorChange {
      *
      * @return a CoreStatus integer
      */
-    public int getStatus() {
+    protected int getStatus() {
         return status.get();
     }
 
@@ -161,9 +177,10 @@ public abstract class PossumCore implements IDetectorChange {
      */
     public void onPause() {
         switch (status.get()) {
+            case CoreStatus.Processing:
             case CoreStatus.Running:
-                // Correctly (presumably) called pause when exiting app. Pausing detectors.
-//                for (AbstractDetector detector : detectors) detector.terminate();
+                // Correctly (presumably) called pause when exiting app.
+                Log.i(tag, "AP: onPause");
                 stopListening();
                 setStatus(CoreStatus.Paused);
                 break;
@@ -181,7 +198,8 @@ public abstract class PossumCore implements IDetectorChange {
      */
     public void onResume() {
         if (status.get() == CoreStatus.Paused) {
-            // Ez way: startListening() - causes problems with deleting data set gathered so far
+            Log.i(tag, "AP: OnResume");
+            // Ez way: startListening() - causes problems with deleting data set gathered so far?
             startListening();
         }
     }
@@ -217,12 +235,12 @@ public abstract class PossumCore implements IDetectorChange {
      */
     public void denyCamera() {
         if (deniedCamera.get()) return;
+        deniedCamera.set(true);
         for (AbstractDetector detector : detectors) {
             if (detector instanceof ImageDetector) {
                 detector.terminate();
             }
         }
-        deniedCamera.set(true);
     }
 
     /**
@@ -317,11 +335,13 @@ public abstract class PossumCore implements IDetectorChange {
      * Stops any actual listening. Only fired if it is actually listening
      */
     public void stopListening() {
-        if (status.get() == CoreStatus.Running) {
+        long timer = System.currentTimeMillis();
+        Log.i(tag, "AP: Stop listening called:"+status.get());
+        if (status.get() == CoreStatus.Running || status.get() == CoreStatus.Processing) {
             for (AbstractDetector detector : detectors)
                 detector.terminate();
             status.set(CoreStatus.Idle);
-//            Log.i(tag, "AP: Stop Listening");
+            Log.i(tag, "AP: Stop Listening - time spent closing:"+(System.currentTimeMillis()-timer));
         }
     }
 
@@ -330,6 +350,7 @@ public abstract class PossumCore implements IDetectorChange {
      *
      * @param listener a listener for changes
      */
+    @SuppressWarnings("unused")
     public void addChangeListener(IDetectorChange listener) {
         changeListeners.add(listener);
     }
@@ -339,6 +360,7 @@ public abstract class PossumCore implements IDetectorChange {
      *
      * @param listener a listener for changes
      */
+    @SuppressWarnings("unused")
     public void removeChangeListener(IDetectorChange listener) {
         changeListeners.remove(listener);
     }
@@ -358,20 +380,7 @@ public abstract class PossumCore implements IDetectorChange {
      * @return true if it is listening, false if in other state
      */
     public boolean isListening() {
-        return status.get() == CoreStatus.Running;
-    }
-
-    /**
-     * Retrieve a detector with a given type from the presently stored detectors
-     *
-     * @param detectorType a detectorType from the DetectorType constants
-     * @return the desired detector or null if not found
-     */
-    public AbstractDetector detectorWithType(int detectorType) {
-        for (AbstractDetector detector : detectors) {
-            if (detector.detectorType() == detectorType) return detector;
-        }
-        return null;
+        return status.get() != CoreStatus.Idle;
     }
 
     /**
