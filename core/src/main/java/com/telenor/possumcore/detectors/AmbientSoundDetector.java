@@ -98,6 +98,11 @@ public class AmbientSoundDetector extends AbstractDetector {
     }
     // TODO: FeatureExtractor uses sampling rate of 16000, but it is recorded with sampleRate of 48000. Check with Alex.
 
+    @Override
+    public int queueLimit(@NonNull String key) {
+        return 200; // Default set
+    }
+
     /**
      * The presently used sampleRate in Hertz. Override to change
      *

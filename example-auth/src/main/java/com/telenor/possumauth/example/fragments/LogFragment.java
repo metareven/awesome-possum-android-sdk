@@ -14,7 +14,6 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.telenor.possumauth.example.R;
-import com.telenor.possumcore.PossumCore;
 import com.telenor.possumcore.constants.Constants;
 
 import java.text.SimpleDateFormat;
@@ -37,7 +36,9 @@ public class LogFragment extends TrustFragment {
         super.onViewCreated(view, bundle);
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         Button clearButton = view.findViewById(R.id.clearButton);
-        clearButton.setOnClickListener(v -> PossumCore.clearLog(getContext()));
+        clearButton.setOnClickListener(v -> {
+            logAdapter.clearLog();
+        });
         logAdapter = new LogAdapter();
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
         recyclerView.setAdapter(logAdapter);
@@ -46,10 +47,7 @@ public class LogFragment extends TrustFragment {
             public void onReceive(Context context, Intent intent) {
                 long time = intent.getLongExtra("time", 0);
                 String text = intent.getStringExtra("log");
-                if (time == 0 || text == null) {
-                    // Clear log
-                    logAdapter.clearLog();
-                } else {
+                if (text != null) {
                     logAdapter.addEntry(new LogEntry(time, text));
                 }
             }

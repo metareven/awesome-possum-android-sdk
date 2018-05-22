@@ -33,6 +33,11 @@ public class Accelerometer extends AbstractSensorDetector {
     }
 
     @Override
+    public int queueLimit(@NonNull String key) {
+        return 85; // Default set - 3 seconds with one each 35 milliseconds
+    }
+
+    @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         if (isInvalid(sensorEvent)) return;
         JsonArray data = new JsonArray();

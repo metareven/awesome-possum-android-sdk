@@ -67,6 +67,11 @@ public class NetworkDetector extends AbstractReceiverDetector {
     }
 
     @Override
+    public int queueLimit(@NonNull String key) {
+        return 50; // Default set
+    }
+
+    @Override
     public boolean isAvailable() {
         return super.isAvailable() && wifiManager != null && wifiManager.isWifiEnabled(); //  && wifiState == WifiManager.WIFI_STATE_ENABLED
     }

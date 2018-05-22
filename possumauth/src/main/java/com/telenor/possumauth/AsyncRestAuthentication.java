@@ -37,7 +37,7 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
         InputStream is = null;
         Exception exception = null;
         JsonObject object = params[0];
-/*        Log.i(tag, "APP: -------------------------------------------------------------------------");
+        /*Log.i(tag, "APP: -------------------------------------------------------------------------");
         for (Map.Entry<String, JsonElement> el :  object.entrySet()) {
             String key = el.getKey();
             if (el.getValue().isJsonArray()) {
@@ -61,7 +61,7 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
             //  zipOut.close();
             //  byte[] dataZipped = bos.toByteArray();
 
-            Log.i(tag, "AP: Start connection to auth - uploading:" + (data.length / 1000) + " KB");
+            Log.i(tag, "APP: Start connection to auth - uploading:" + (data.length / 1000) + " KB");
             long startTime = System.currentTimeMillis();
 //            successMessage = "{\"sensors\": {\"bluetooth\": [{\"name\": \"default\", \"score\": 0, \"status\": 0}], \"gac\": [{\"name\": \"default\", \"score\": 0.8024234771728516, \"status\": 1.0}], \"image\": [{\"name\": \"default\", \"score\": 0, \"status\": 0}], \"network\": [{\"name\": \"default\", \"score\": 0.0, \"status\": \"1.0\"}, {\"name\": \"binary\", \"score\": 0.0, \"status\": \"1.0\"}], \"sound\": [{\"name\": \"classic\", \"score\": 1.0, \"status\": 1.0}]}, \"trustscore\": [{\"name\": \"default\", \"score\": 0.3604846954345703, \"status\": 0}]}";
 //            responseMessage = "200 OK";

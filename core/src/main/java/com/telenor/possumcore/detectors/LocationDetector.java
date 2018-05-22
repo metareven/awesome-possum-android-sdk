@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import com.google.gson.JsonArray;
 import com.telenor.possumcore.abstractdetectors.AbstractReceiverDetector;
@@ -47,6 +46,11 @@ public class LocationDetector extends AbstractReceiverDetector implements Locati
     @Override
     public boolean isAvailable() {
         return super.isAvailable() && locationManager != null && locationManager.getProviders(true).size() > 0;
+    }
+
+    @Override
+    public int queueLimit(@NonNull String key) {
+        return 20; // Default set
     }
 
     /**

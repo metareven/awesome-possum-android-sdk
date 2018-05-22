@@ -7,16 +7,15 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.google.gson.JsonArray;
+import com.telenor.possumcore.LimitedQueue;
 import com.telenor.possumcore.interfaces.IDetectorChange;
 
 import net.danlew.android.joda.JodaTimeAndroid;
 
 import org.joda.time.DateTime;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,7 +29,7 @@ public abstract class AbstractDetector implements Runnable {
     private Context context;
     private String uniqueUserId;
     private AtomicBoolean isRunning = new AtomicBoolean(false);
-    protected Map<String, List<JsonArray>> dataStored = new HashMap<>();
+    protected Map<String, LimitedQueue<JsonArray>> dataStored = new HashMap<>();
     protected static final String tag = AbstractDetector.class.getName();
     protected static final String defaultSet = "default";
     private IDetectorChange changeListener;
@@ -54,8 +53,8 @@ public abstract class AbstractDetector implements Runnable {
      * @return a list of JsonArrays. Which type of list is up to the implementation.
      * Default is an ArrayList. If necessary, use concurrent lists.
      */
-    protected List<JsonArray> createInternalList() {
-        return new ArrayList<>();
+    protected LimitedQueue<JsonArray> createInternalList(String dataSet) {
+        return new LimitedQueue<>(queueLimit(dataSet));
     }
 
     /**
@@ -65,9 +64,18 @@ public abstract class AbstractDetector implements Runnable {
      * @param dataSet name of the dataSet, "default" is taken for the standard set
      */
     protected void createDataSet(@NonNull String dataSet) {
-        dataStored.put(dataSet, createInternalList());
+        dataStored.put(dataSet, createInternalList(dataSet));
     }
 
+    /**
+     * Queue limit pr dataSet
+     * Can, and should, be overridden if there is a desire to change how much the fifo queue should
+     * contains
+     *
+     * @param key dataSet name
+     * @return number of inserts, dependent on detector
+     */
+    public abstract int queueLimit(@NonNull String key);
 
     /**
      * Handy method for getting a present timestamp
@@ -144,7 +152,7 @@ public abstract class AbstractDetector implements Runnable {
     @Override
     public void run() {
         isRunning.set(true);
-        for (List<JsonArray> data : dataStored.values()) {
+        for (LimitedQueue<JsonArray> data : dataStored.values()) {
             data.clear();
         }
     }
@@ -153,9 +161,9 @@ public abstract class AbstractDetector implements Runnable {
      * Retrieves a given dataSet
      *
      * @param dataSet the name of the dataSet
-     * @return a jsonArray containing the data or null if dataSet is not found
+     * @return a queue containing the data (in jsonArrays) or null if dataSet is not found
      */
-    protected List<JsonArray> dataSet(@NonNull String dataSet) {
+    protected LimitedQueue<JsonArray> dataSet(@NonNull String dataSet) {
         return dataStored.get(dataSet);
     }
 
@@ -206,7 +214,7 @@ public abstract class AbstractDetector implements Runnable {
     }
 
     protected void streamData(JsonArray data, String dataSet) {
-        List<JsonArray> set = dataSet(dataSet);
+        LimitedQueue<JsonArray> set = dataSet(dataSet);
         if (set == null) {
             Log.e(tag, "DataSet is not found, data is not stored (" + dataSet + ")");
             return;
@@ -238,7 +246,7 @@ public abstract class AbstractDetector implements Runnable {
      *
      * @return a map with dataSet names containing jsonArrays with all the data
      */
-    public Map<String, List<JsonArray>> dataStored() {
+    public Map<String, LimitedQueue<JsonArray>> dataStored() {
         return dataStored;
     }
 
@@ -273,11 +281,11 @@ public abstract class AbstractDetector implements Runnable {
      */
     public synchronized JsonArray jsonData(String dataSet) {
         JsonArray outputArr = new JsonArray();
-        List<JsonArray> data = dataStored.get(dataSet);
+        LimitedQueue<JsonArray> data = dataStored.get(dataSet);
         for (JsonArray arr : data) {
             outputArr.add(arr);
         }
-        dataStored.put(dataSet, new ArrayList<>()); // Clearing the dataSet
+        dataStored.put(dataSet, new LimitedQueue<>(queueLimit(dataSet))); // Clearing the dataSet
         return outputArr;
     }
 

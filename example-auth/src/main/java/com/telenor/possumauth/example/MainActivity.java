@@ -50,7 +50,6 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
         possumAuth = new PossumAuth(getApplicationContext(), userId, getString(R.string.authentication_url), getString(R.string.apiKey));
         possumAuth.addAuthListener(this);
         possumAuth.setTimeOut(0); // Timeout is handled by client
-        PossumAuth.clearLog(getApplicationContext());
         showFragment(MainFragment.class);
     }
 
@@ -95,7 +94,7 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
 
     private void updateSharedPreferences(JsonObject object) {
         JsonObject sensorsObject = object.getAsJsonObject("sensors");
-        JsonObject oldStoredData = (JsonObject) parser.parse(preferences.getString(AppConstants.STORED_GRAPH_DISPLAY, "{}"));
+        JsonObject oldStoredData = GraphUtil.graphVisibility(preferences);
         List<String> oldGraphs = new ArrayList<>();
         for (Map.Entry<String, JsonElement> entry : oldStoredData.entrySet())
             oldGraphs.add(entry.getKey());
@@ -231,7 +230,7 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        graphVisibility = (JsonObject)GraphUtil.parser().parse(sharedPreferences.getString(AppConstants.STORED_GRAPH_DISPLAY, "{}"));
+        graphVisibility = GraphUtil.graphVisibility(sharedPreferences);
         for (Map.Entry<String, JsonElement> entry : graphVisibility.entrySet()) {
             String graph = entry.getKey();
             boolean visible = entry.getValue().getAsBoolean();

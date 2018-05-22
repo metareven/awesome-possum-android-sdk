@@ -61,7 +61,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     private boolean isProcessingFace;
     private JsonParser parser;
     private Gson gson;
-    private boolean didFindFace;
+//    private boolean didFindFace;
     private static final String lbpDataSet = "image_lbp";
     private static final String modelName = "tensorflow_facerecognition.pb";
 
@@ -81,6 +81,12 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             Log.e(tag, "AP: Failed to initialize tensorFlow or openCV:", e);
             PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Failed to initialize tensorflow:"+e.getLocalizedMessage());
         }
+    }
+
+    @Override
+    public int queueLimit(@NonNull String key) {
+        if (key.equals(lbpDataSet)) return 5;
+        return 10; // Default set
     }
 
     /**
@@ -145,9 +151,10 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         super.run();
         if (isEnabled() && isAvailable()) {
             isProcessingFace = false;
-            didFindFace = false;
+            //didFindFace = false;
             try {
                 cameraSource.start();
+                PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Camera is started");
             } catch (IOException e) {
                 PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Unable to start camera:"+e.getLocalizedMessage());
                 Log.i(tag, "AP: IO:", e);
@@ -160,10 +167,11 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     @SuppressWarnings("MissingPermission")
     @Override
     public void terminate() {
-        PossumCore.addLogEntry(context(), System.currentTimeMillis(), didFindFace?"Did find face during rotation":"No face found during rotation");
+//        PossumCore.addLogEntry(context(), System.currentTimeMillis(), didFindFace?"Did find face during rotation":"No face found during rotation");
         if (isPermitted()) {
             if (cameraSource != null) {
                 cameraSource.stop();
+                PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Camera is stopped");
             }
         }
     }
@@ -175,7 +183,12 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
 
     @Override
     public void faceFound(Face face, Frame frame) {
-        if (face == null || isProcessingFace) return;
+        if (face == null) {
+            PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Face is null from detector");
+            return;
+        }
+        if (isProcessingFace) return;
+        isProcessingFace = true;
         PointF leftEye = null;
         PointF rightEye = null;
         PointF mouth = null;
@@ -210,7 +223,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             else if (landmark.getType() == Landmark.BOTTOM_MOUTH) mouth = landmark.getPosition();
         }
         if (leftEye != null && rightEye != null && mouth != null) {
-            isProcessingFace = true;
             PointF centroid = new PointF((rightEye.x + leftEye.x + mouth.x) / 3, (rightEye.y + leftEye.y + mouth.y) / 3);
             float diffX = 1.5f * Math.abs(leftEye.x - rightEye.x);
             RectF faceFrame = new RectF(centroid.x - diffX, centroid.y - diffX, centroid.x + diffX, centroid.y + diffX);
@@ -229,24 +241,31 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
                 isProcessingFace = false;
                 return;
             }
-            didFindFace = true;
+//            didFindFace = true;
             final Bitmap scaledOutput = Bitmap.createScaledBitmap(alignedFace, OUTPUT_BMP_WIDTH, OUTPUT_BMP_HEIGHT, false);
 
             long nowTimestamp = now();
 
             // Tensor weights
-            streamData(tensorFlowInterface.getWeights(scaledOutput, nowTimestamp));
-
+            try {
+                streamData(tensorFlowInterface.getWeights(scaledOutput, nowTimestamp));
+            } catch (Exception e) {
+                PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Failed to stream tensorflow:"+e.getLocalizedMessage());
+            }
             // LBP array
-            JsonArray lbpArray = new JsonArray();
-            lbpArray.add(""+nowTimestamp);
-            lbpArray.add(parser.parse(gson.toJson(mainLBP(scaledOutput))));
-            lbpArray.add(landMarks(face));
-            streamData(lbpArray, lbpDataSet);
+            try {
+                JsonArray lbpArray = new JsonArray();
+                lbpArray.add("" + nowTimestamp);
+                lbpArray.add(parser.parse(gson.toJson(mainLBP(scaledOutput))));
+                lbpArray.add(landMarks(face));
+                streamData(lbpArray, lbpDataSet);
+            } catch (Exception e) {
+                PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Failed to handle LBP:"+e.getLocalizedMessage());
+            }
             PossumCore.addLogEntry(context(), System.currentTimeMillis(),"Face determined and processed");
-            isProcessingFace = false;
             Log.i(tag, "AP: Processed face");
         }
+        isProcessingFace = false;
     }
 
     int[] mainLBP(Bitmap image) {

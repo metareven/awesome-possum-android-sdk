@@ -17,10 +17,8 @@ import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.telenor.possumauth.example.AppConstants;
 import com.telenor.possumauth.example.GraphUtil;
 import com.telenor.possumauth.example.MainActivity;
@@ -30,9 +28,7 @@ import java.util.Map;
 
 public class AllDetectorsChartFragment extends TrustFragment {
     private LineChart lineChart;
-    private JsonParser parser;
     private Handler handler = new Handler(Looper.getMainLooper());
-    private JsonArray presentArray;
     private BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -48,7 +44,6 @@ public class AllDetectorsChartFragment extends TrustFragment {
     @Override
     public void onViewCreated(View view, Bundle bundle) {
         super.onViewCreated(view, bundle);
-        parser = new JsonParser();
         getContext().registerReceiver(receiver, new IntentFilter(AppConstants.UPDATE_GRAPHS));
         lineChart = view.findViewById(R.id.lineChart);
         lineChart.setTouchEnabled(false);

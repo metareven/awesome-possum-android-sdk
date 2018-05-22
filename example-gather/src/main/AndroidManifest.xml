@@ -3,8 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.telenor.possumgather.example" tools:node="merge">
 
+    <!-- allowBackup is false to prevent sharedPreferences from storing data to cloud and reinstall on new app -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"

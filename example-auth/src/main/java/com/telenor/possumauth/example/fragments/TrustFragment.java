@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.View;
 
-import com.telenor.possumauth.interfaces.IAuthCompleted;
 import com.telenor.possumcore.abstractdetectors.AbstractDetector;
 import com.telenor.possumcore.interfaces.IDetectorChange;
 

@@ -10,7 +10,6 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 
@@ -25,7 +24,7 @@ import com.telenor.possumcore.interfaces.IDetectorChange;
  */
 public class BluetoothDetector extends AbstractReceiverDetector {
     private BluetoothAdapter bluetoothAdapter;
-    private Handler handler = new Handler();
+//    private Handler handler = new Handler();
     private static final String scanDataSet = "bluetooth_scan";
 //    private static final long maxScanTime = 12000; // 12 seconds is maximum scan time
     private static final int[] allStates = {BluetoothProfile.STATE_CONNECTED,
@@ -48,6 +47,12 @@ public class BluetoothDetector extends AbstractReceiverDetector {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             createBleCallback();
         }
+    }
+
+    @Override
+    public int queueLimit(@NonNull String key) {
+        if (key.equals(scanDataSet)) return 20;
+        return 20; // Default set
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)

@@ -30,6 +30,11 @@ public class HardwareDetector extends AbstractDetector {
     }
 
     @Override
+    public int queueLimit(@NonNull String key) {
+        return 300;
+    }
+
+    @Override
     public int detectorType() {
         return DetectorType.Hardware;
     }

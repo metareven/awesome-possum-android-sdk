@@ -2,15 +2,9 @@ package com.telenor.possumcore.shadows;
 
 import android.media.AudioRecord;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
-import org.robolectric.annotation.Resetter;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 
 /**
  * Shadow for {@link android.media.AudioRecord}.

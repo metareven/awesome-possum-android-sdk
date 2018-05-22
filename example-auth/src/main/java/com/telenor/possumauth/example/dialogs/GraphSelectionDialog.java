@@ -4,10 +4,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatDialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,6 +29,7 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
     private GraphAdapter myAdapter;
     private TextView missingTextField;
     private RecyclerView recyclerView;
+    @SuppressWarnings("unused")
     private static final String tag = GraphSelectionDialog.class.getName();
 
     @Override
@@ -56,24 +57,28 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
     }
 
     protected class GraphObject {
-        private String name;
-        private boolean isShown;
+        public final String name;
+        public boolean isShown;
 
-        GraphObject(String name, boolean isShown) {
+        GraphObject(@NonNull String name, boolean isShown) {
             this.name = name;
             this.isShown = isShown;
         }
 
-        String name() {
-            return name;
-        }
-
-        boolean isShown() {
-            return isShown;
-        }
-
         void toggleChecked() {
             isShown = !isShown;
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof GraphObject)) return false;
+            GraphObject gObj = (GraphObject)obj;
+            return gObj.name.equals(name);
         }
     }
 
@@ -88,8 +93,8 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
         }
 
         void bind(GraphObject graphObject) {
-            graphName.setText(graphObject.name());
-            showGraphBox.setChecked(graphObject.isShown());
+            graphName.setText(graphObject.name);
+            showGraphBox.setChecked(graphObject.isShown);
         }
     }
 
@@ -124,11 +129,33 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
                 missingTextField.setVisibility(View.VISIBLE);
                 return;
             }
-            JsonObject storedPrefs = (JsonObject) GraphUtil.parser().parse(preferences.getString(AppConstants.STORED_GRAPH_DISPLAY, "{}"));
-            objects.clear();
+            JsonObject storedPrefs = GraphUtil.graphVisibility(preferences);
+            List<GraphObject> oldObjects = new ArrayList<>(objects);
+            List<GraphObject> newObjects = new ArrayList<>();
             for (Map.Entry<String, JsonElement> entry : storedPrefs.entrySet()) {
-                boolean visible = storedPrefs.get(entry.getKey()).getAsBoolean();
-                objects.add(new GraphObject(entry.getKey(), visible));
+                String key = entry.getKey();
+                boolean visible = storedPrefs.get(key).getAsBoolean();
+                newObjects.add(new GraphObject(key, visible));
+            }
+            // in old, not in new -> delete
+            // in new, not in old -> add
+            List<GraphObject> delete = new ArrayList<>(oldObjects);
+            delete.removeAll(newObjects);
+            List<GraphObject> add = new ArrayList<>(newObjects);
+            add.removeAll(oldObjects);
+
+            if (add.size() > 0) {
+                for (GraphObject obj : add) {
+                    notifyItemInserted(objects.size()>0?objects.size()-1:0);
+                    objects.add(obj);
+                }
+            }
+            if (delete.size() > 0) {
+                for (GraphObject obj : delete) {
+                    int index = objects.indexOf(obj);
+                    objects.remove(obj);
+                    notifyItemRemoved(index);
+                }
             }
             recyclerView.setVisibility(objects.size() == 0 ? View.GONE : View.VISIBLE);
             missingTextField.setVisibility(objects.size() == 0 ? View.VISIBLE : View.GONE);
@@ -143,7 +170,7 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
             if (preferences == null) return;
             JsonObject saveObject = new JsonObject();
             for (GraphObject obj : objects) {
-                saveObject.addProperty(obj.name(), obj.isShown());
+                saveObject.addProperty(obj.name, obj.isShown);
             }
             preferences.edit().putString(AppConstants.STORED_GRAPH_DISPLAY, saveObject.toString()).apply();
         }
@@ -151,10 +178,7 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
             if (AppConstants.STORED_GRAPH_DISPLAY.equals(key)) {
-                Log.i(tag, "AP: Changed shared prefs");
                 updateFromSharedPreferences();
-            } else {
-                Log.i(tag, "AP: Unknown key changed:"+key);
             }
         }
     }

@@ -55,23 +55,23 @@ public class MainFragment extends TrustFragment {
                         case Messaging.AUTH_START:
                             if (startedAuth) {
                                 trustButton.authenticate();
-                                status.setText("Collecting data");
+                                status.setText(R.string.collecting_data);
                                 possumAuth.startListening();
                             }
                             break;
                         case Messaging.AUTH_TERMINATE:
                             trustButton.stopAuthenticate();
-                            status.setText("Stopped auth");
+                            status.setText(R.string.stopped_auth);
                             possumAuth.stopListening();
                             break;
                         case Messaging.AUTH_VERIFY:
-                            status.setText("Communicating with server");
+                            status.setText(R.string.communicating_with_server);
                             trustButton.stopAuthenticate();
 //                            possumAuth.stopListening();
                             possumAuth.authenticate();
                             break;
                         case Messaging.READY_TO_AUTH:
-                            status.setText("Ready to auth");
+                            status.setText(R.string.ready_to_auth);
                             trustButton.setEnabled(true);
                             break;
                         default:
@@ -86,10 +86,10 @@ public class MainFragment extends TrustFragment {
         //iconWheel = view.findViewById(R.id.iconWheel);
         trustButton = view.findViewById(R.id.trustWheel);
         if (((MainActivity) getActivity()).validId(myId())) {
-            status.setText("Ready for auth");
+            status.setText(R.string.ready_to_auth);
             trustButton.setEnabled(true);
         } else {
-            status.setText("Need a user id");
+            status.setText(R.string.need_user_id);
             trustButton.setEnabled(false);
         }
         trustButton.setOnClickListener(v -> {

@@ -70,7 +70,12 @@ public class GraphUtil {
     }
 
     public static JsonObject graphVisibility(SharedPreferences preferences) {
-        return (JsonObject)parser().parse(preferences.getString(AppConstants.STORED_GRAPH_DISPLAY, "{}"));
+        JsonElement el = parser().parse(preferences.getString(AppConstants.STORED_GRAPH_DISPLAY, "{}"));
+        if (el.isJsonArray()) {
+            return new JsonObject();
+        } else {
+            return el.getAsJsonObject();
+        }
     }
 
     public static String shortHand(String name) {

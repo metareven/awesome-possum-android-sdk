@@ -52,8 +52,6 @@ public abstract class PossumCore implements IDetectorChange {
     private List<IDetectorChange> changeListeners = new ArrayList<>();
     private AtomicBoolean deniedCamera = new AtomicBoolean(false);
     private long timeOut = 3000; // Default timeOut
-    private static List<Long> logTime = new ArrayList<>();
-    private static List<String> logText = new ArrayList<>();
 
     private static final String tag = PossumCore.class.getName();
 
@@ -71,15 +69,6 @@ public abstract class PossumCore implements IDetectorChange {
     }
 
     /**
-     * Clears the log
-     */
-    public static void clearLog(@NonNull Context context) {
-        logTime.clear();
-        logText.clear();
-        context.sendBroadcast(new Intent(Constants.PossumLog));
-    }
-
-    /**
      * Adds an entry to the log
      *
      * @param context   a valid android context
@@ -87,10 +76,8 @@ public abstract class PossumCore implements IDetectorChange {
      * @param text      the text stored
      */
     public static void addLogEntry(@NonNull Context context, long timestamp, String text) {
-        // TODO: This should be removed (or at least cleaned) before final. Purely debug for POC
-        logText.add(text);
-        logTime.add(timestamp);
         Intent intent = new Intent(Constants.PossumLog);
+        intent.putExtra("action", "add");
         intent.putExtra("time", timestamp);
         intent.putExtra("log", text);
         context.sendBroadcast(intent);
