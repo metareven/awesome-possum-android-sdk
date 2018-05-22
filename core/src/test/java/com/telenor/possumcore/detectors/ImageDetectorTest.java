@@ -81,16 +81,10 @@ public class ImageDetectorTest {
 
 //        Assert.fail("Architecture:"+System.getProperty("os.arch"));
         when(mockedContext.checkPermission(eq(Manifest.permission.CAMERA), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
-        imageDetector = new ImageDetector(RuntimeEnvironment.application) {
+        imageDetector = new ImageDetector(RuntimeEnvironment.application, "tensorflow_facerecognition.pb") {
             @Override
             protected TensorWeights createTensor(AssetManager assetManager, String modelName) {
                 return mockedTensor;
-            }
-            @Override
-            protected void initializeOpenCV() {
-                // To avoid dealing with static library loading in robolectric, openCV is removed
-                // from initialization of detector
-                counter++;
             }
         };
     }
@@ -211,12 +205,6 @@ public class ImageDetectorTest {
         Assert.assertNull(detectorField.get(imageDetector));
         Assert.assertNull(cameraSourceField.get(imageDetector));
     }
-
-//    @Test
-//    public void testInitializationWithTensorFlowAndOpenCV() throws Exception {
-//        imageDetector = new ImageDetector(RuntimeEnvironment.application);
-//        Assert.assertNotNull(imageDetector);
-//    }
 
     @Test
     public void testStopFiresCameraSourceStop() throws Exception {

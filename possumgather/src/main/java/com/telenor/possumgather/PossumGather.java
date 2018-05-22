@@ -62,7 +62,7 @@ public class PossumGather extends PossumCore {
         addDetector(new GyroScope(context));
         addDetector(new NetworkDetector(context));
         addDetector(new LocationDetector(context));
-        addDetector(new ImageDetector(context));
+        addDetector(new ImageDetector(context, "tensorflow_facerecognition.pb"));
         addDetector(new BluetoothDetector(context));
     }
 

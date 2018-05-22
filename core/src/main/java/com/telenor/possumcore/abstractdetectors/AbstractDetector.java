@@ -7,7 +7,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.google.gson.JsonArray;
-import com.telenor.possumcore.LimitedQueue;
+import com.telenor.possumcore.LimitedConcurrentQueue;
 import com.telenor.possumcore.interfaces.IDetectorChange;
 
 import net.danlew.android.joda.JodaTimeAndroid;
@@ -29,7 +29,7 @@ public abstract class AbstractDetector implements Runnable {
     private Context context;
     private String uniqueUserId;
     private AtomicBoolean isRunning = new AtomicBoolean(false);
-    protected Map<String, LimitedQueue<JsonArray>> dataStored = new HashMap<>();
+    protected Map<String, LimitedConcurrentQueue<JsonArray>> dataStored = new HashMap<>();
     protected static final String tag = AbstractDetector.class.getName();
     protected static final String defaultSet = "default";
     private IDetectorChange changeListener;
@@ -53,8 +53,8 @@ public abstract class AbstractDetector implements Runnable {
      * @return a list of JsonArrays. Which type of list is up to the implementation.
      * Default is an ArrayList. If necessary, use concurrent lists.
      */
-    protected LimitedQueue<JsonArray> createInternalList(String dataSet) {
-        return new LimitedQueue<>(queueLimit(dataSet));
+    protected LimitedConcurrentQueue<JsonArray> createInternalList(String dataSet) {
+        return new LimitedConcurrentQueue<>(queueLimit(dataSet));
     }
 
     /**
@@ -152,7 +152,7 @@ public abstract class AbstractDetector implements Runnable {
     @Override
     public void run() {
         isRunning.set(true);
-        for (LimitedQueue<JsonArray> data : dataStored.values()) {
+        for (LimitedConcurrentQueue<JsonArray> data : dataStored.values()) {
             data.clear();
         }
     }
@@ -163,7 +163,7 @@ public abstract class AbstractDetector implements Runnable {
      * @param dataSet the name of the dataSet
      * @return a queue containing the data (in jsonArrays) or null if dataSet is not found
      */
-    protected LimitedQueue<JsonArray> dataSet(@NonNull String dataSet) {
+    protected LimitedConcurrentQueue<JsonArray> dataSet(@NonNull String dataSet) {
         return dataStored.get(dataSet);
     }
 
@@ -214,7 +214,7 @@ public abstract class AbstractDetector implements Runnable {
     }
 
     protected void streamData(JsonArray data, String dataSet) {
-        LimitedQueue<JsonArray> set = dataSet(dataSet);
+        LimitedConcurrentQueue<JsonArray> set = dataSet(dataSet);
         if (set == null) {
             Log.e(tag, "DataSet is not found, data is not stored (" + dataSet + ")");
             return;
@@ -246,7 +246,7 @@ public abstract class AbstractDetector implements Runnable {
      *
      * @return a map with dataSet names containing jsonArrays with all the data
      */
-    public Map<String, LimitedQueue<JsonArray>> dataStored() {
+    public Map<String, LimitedConcurrentQueue<JsonArray>> dataStored() {
         return dataStored;
     }
 
@@ -281,11 +281,11 @@ public abstract class AbstractDetector implements Runnable {
      */
     public synchronized JsonArray jsonData(String dataSet) {
         JsonArray outputArr = new JsonArray();
-        LimitedQueue<JsonArray> data = dataStored.get(dataSet);
+        LimitedConcurrentQueue<JsonArray> data = dataStored.get(dataSet);
         for (JsonArray arr : data) {
             outputArr.add(arr);
         }
-        dataStored.put(dataSet, new LimitedQueue<>(queueLimit(dataSet))); // Clearing the dataSet
+        dataStored.put(dataSet, new LimitedConcurrentQueue<>(queueLimit(dataSet))); // Clearing the dataSet
         return outputArr;
     }
 

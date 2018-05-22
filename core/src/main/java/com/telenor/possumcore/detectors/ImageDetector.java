@@ -55,12 +55,11 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     private Gson gson;
 //    private boolean didFindFace;
     private static final String lbpDataSet = "image_lbp";
-    private static final String modelName = "tensorflow_facerecognition.pb";
 
-    public ImageDetector(@NonNull Context context) {
-        this(context, null);
+    public ImageDetector(@NonNull Context context, @NonNull String modelName) {
+        this(context, modelName, null);
     }
-    public ImageDetector(@NonNull Context context, IDetectorChange listener) {
+    public ImageDetector(@NonNull Context context, @NonNull String modelName, IDetectorChange listener) {
         super(context, listener);
         parser = new JsonParser();
         gson = new Gson();

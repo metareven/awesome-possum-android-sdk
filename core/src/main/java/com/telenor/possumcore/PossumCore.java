@@ -101,7 +101,7 @@ public abstract class PossumCore implements IDetectorChange {
         addDetector(new GyroScope(context, this));
         addDetector(new NetworkDetector(context, this));
         addDetector(new LocationDetector(context, this));
-        addDetector(new ImageDetector(context, this));
+        addDetector(new ImageDetector(context, "tensorflow_facerecognition.pb", this));
         addDetector(new BluetoothDetector(context, this));
     }
 

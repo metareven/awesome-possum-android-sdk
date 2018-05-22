@@ -3,8 +3,8 @@ apply plugin: 'com.novoda.bintray-release'
 
 project.group = 'com.telenor'
 ext {
-    VERSION_CODE = 17
-    VERSION_NAME = '1.4.0'
+    VERSION_CODE = 18
+    VERSION_NAME = '1.4.1'
 }
 version = VERSION_NAME
 project.version = VERSION_NAME
