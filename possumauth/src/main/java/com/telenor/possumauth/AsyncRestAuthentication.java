@@ -4,6 +4,7 @@ import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.telenor.possumauth.interfaces.IAuthCompleted;
 
@@ -15,6 +16,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 
 public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Exception> {
     private final URL url;
@@ -37,19 +39,19 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
         InputStream is = null;
         Exception exception = null;
         JsonObject object = params[0];
-        /*Log.i(tag, "APP: -------------------------------------------------------------------------");
+        Log.i(tag, "AP: -------------------------------------------------------------------------\n");
         for (Map.Entry<String, JsonElement> el :  object.entrySet()) {
             String key = el.getKey();
             if (el.getValue().isJsonArray()) {
                 byte[] temp = el.getValue().getAsJsonArray().toString().getBytes();
                 int size = (temp.length/1000);
                 if (size == 0) {
-                    Log.i(tag, "APP: "+key+" -> "+temp.length+"B");
+                    Log.i(tag, "AP: "+key+" -> "+temp.length+"B\n");
                 } else {
-                    Log.i(tag, "APP: "+key+" -> "+(temp.length/1000)+"KB");
+                    Log.i(tag, "AP: "+key+" -> "+(temp.length/1000)+"KB\n");
                 }
             }
-        }*/
+        }
         try {
             byte[] data = object.toString().getBytes();
             //// Zip data
@@ -61,7 +63,7 @@ public class AsyncRestAuthentication extends AsyncTask<JsonObject, Void, Excepti
             //  zipOut.close();
             //  byte[] dataZipped = bos.toByteArray();
 
-            Log.i(tag, "APP: Start connection to auth - uploading:" + (data.length / 1000) + " KB");
+            Log.i(tag, "AP: Start connection to auth - uploading:" + (data.length / 1000) + " KB");
             long startTime = System.currentTimeMillis();
 //            successMessage = "{\"sensors\": {\"bluetooth\": [{\"name\": \"default\", \"score\": 0, \"status\": 0}], \"gac\": [{\"name\": \"default\", \"score\": 0.8024234771728516, \"status\": 1.0}], \"image\": [{\"name\": \"default\", \"score\": 0, \"status\": 0}], \"network\": [{\"name\": \"default\", \"score\": 0.0, \"status\": \"1.0\"}, {\"name\": \"binary\", \"score\": 0.0, \"status\": \"1.0\"}], \"sound\": [{\"name\": \"classic\", \"score\": 1.0, \"status\": 1.0}]}, \"trustscore\": [{\"name\": \"default\", \"score\": 0.3604846954345703, \"status\": 0}]}";
 //            responseMessage = "200 OK";

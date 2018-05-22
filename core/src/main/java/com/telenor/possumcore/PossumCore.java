@@ -72,13 +72,12 @@ public abstract class PossumCore implements IDetectorChange {
      * Adds an entry to the log
      *
      * @param context   a valid android context
-     * @param timestamp the time the log entry happened
      * @param text      the text stored
      */
-    public static void addLogEntry(@NonNull Context context, long timestamp, String text) {
+    public static void addLogEntry(@NonNull Context context, String text) {
         Intent intent = new Intent(Constants.PossumLog);
         intent.putExtra("action", "add");
-        intent.putExtra("time", timestamp);
+        intent.putExtra("time", System.currentTimeMillis());
         intent.putExtra("log", text);
         context.sendBroadcast(intent);
     }
@@ -323,12 +322,10 @@ public abstract class PossumCore implements IDetectorChange {
      */
     public void stopListening() {
         long timer = System.currentTimeMillis();
-        Log.i(tag, "AP: Stop listening called:"+status.get());
         if (status.get() == CoreStatus.Running || status.get() == CoreStatus.Processing) {
             for (AbstractDetector detector : detectors)
                 detector.terminate();
             status.set(CoreStatus.Idle);
-            Log.i(tag, "AP: Stop Listening - time spent closing:"+(System.currentTimeMillis()-timer));
         }
     }
 

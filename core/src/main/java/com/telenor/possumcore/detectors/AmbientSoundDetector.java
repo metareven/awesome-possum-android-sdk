@@ -138,23 +138,6 @@ public class AmbientSoundDetector extends AbstractDetector {
         }
     }
 
-/*    @Override
-    public void onResume(boolean continueRunning) {
-        super.onResume(continueRunning);
-        if (continueRunning && !isRecording()) {
-            run();
-            // TODO: Confirm working
-        }
-    }*/
-
-/*    @Override
-    public void onPause() {
-        super.onPause();
-        if (isRecording()) {
-            stopRecording();
-        }
-    }*/
-
     /**
      * Returns whether it is actually recording
      *
@@ -174,7 +157,6 @@ public class AmbientSoundDetector extends AbstractDetector {
         super.run();
         if (isEnabled() && isAvailable() && !isRecording()) {
             short[] buffer = new short[bufferSize];
-            int recordedSamples = 0;
             int readSize;
             if (isMuted() && audioManager != null) {
                 audioManager.setMicrophoneMute(false);
@@ -183,21 +165,17 @@ public class AmbientSoundDetector extends AbstractDetector {
             if (audioRecorder == null || audioRecorder.getState() == AudioRecord.STATE_UNINITIALIZED) {
                 audioRecorder = getAudioRecord();
             }
-            //Log.d(tag, "AP: Start recording ambient sound");
             audioRecorder.startRecording();
-  //          audioHandler.postDelayed(this::terminate, maxListeningTime);
-            while (isRecording()) {// && recordedSamples < recordingSamples) {
-             //   Log.i(tag, "AP: Data recording, recorded samples:"+recordedSamples);
+            while (isRecording()) {
                 if ((readSize = audioRecorder.read(buffer, 0, bufferSize)) != AudioRecord.ERROR_INVALID_OPERATION) {
                     // Calculate features
                     for (double[] window : getFeaturesFromSample(buffer, readSize, sampleRate())) {
                         streamData(writeFeatureWindowToJsonArray(window));
                     }
-                    recordedSamples += readSize;
                 }
             }
         } else {
-            PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Unable to start audio:"+isEnabled()+","+isAvailable()+","+isRecording());
+            PossumCore.addLogEntry(context(), "Unable to start audio:"+isEnabled()+","+isAvailable()+","+isRecording());
         }
     }
 

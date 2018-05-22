@@ -33,18 +33,9 @@ import com.telenor.possumcore.facedetection.IFaceFound;
 import com.telenor.possumcore.interfaces.IDetectorChange;
 import com.telenor.possumcore.neuralnetworks.TensorWeights;
 
-import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.Point;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Vector;
-
-import static org.opencv.imgproc.Imgproc.getAffineTransform;
-import static org.opencv.imgproc.Imgproc.warpAffine;
 
 /**
  * Uses your back camera to try to get a facial assessment, utilizing image recognition to see
@@ -58,7 +49,8 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     private static final int PREVIEW_HEIGHT = 480;
     private static final int OUTPUT_BMP_WIDTH = 96;
     private static final int OUTPUT_BMP_HEIGHT = 96;
-    private boolean isProcessingFace;
+    private static final int MINIMUM_FACE_INTERVAL = 500; // Least amount of milliseconds between accepting new face
+    private long lastFaceProcessed;
     private JsonParser parser;
     private Gson gson;
 //    private boolean didFindFace;
@@ -76,10 +68,9 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         createDataSet(lbpDataSet);
         try {
             tensorFlowInterface = createTensor(context.getAssets(), modelName);
-            initializeOpenCV();
         } catch (Exception e) {
             Log.e(tag, "AP: Failed to initialize tensorFlow or openCV:", e);
-            PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Failed to initialize tensorflow:"+e.getLocalizedMessage());
+            PossumCore.addLogEntry(context(), "Failed to initialize tensorflow:"+e.getLocalizedMessage());
         }
     }
 
@@ -107,13 +98,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             detector = new FaceDetector(googleFaceDetector, this);
             detector.setProcessor(new FaceProcessor(detector, new FaceTracker()));
         }
-    }
-
-    /**
-     * Separate method to handle openCV in order to ease testing
-     */
-    protected void initializeOpenCV() {
-        OpenCVLoader.initDebug(context());
     }
 
     /**
@@ -150,28 +134,27 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     public void run() {
         super.run();
         if (isEnabled() && isAvailable()) {
-            isProcessingFace = false;
             //didFindFace = false;
             try {
                 cameraSource.start();
-                PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Camera is started");
+                PossumCore.addLogEntry(context(), "Camera is started");
             } catch (IOException e) {
-                PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Unable to start camera:"+e.getLocalizedMessage());
+                PossumCore.addLogEntry(context(), "Unable to start camera:"+e.getLocalizedMessage());
                 Log.i(tag, "AP: IO:", e);
             }
         } else {
-            PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Unable to start cam:"+isEnabled()+","+isAvailable());
+            PossumCore.addLogEntry(context(), "Unable to start cam:"+isEnabled()+","+isAvailable());
         }
     }
 
     @SuppressWarnings("MissingPermission")
     @Override
     public void terminate() {
-//        PossumCore.addLogEntry(context(), System.currentTimeMillis(), didFindFace?"Did find face during rotation":"No face found during rotation");
+//        PossumCore.addLogEntry(context(), didFindFace?"Did find face during rotation":"No face found during rotation");
         if (isPermitted()) {
             if (cameraSource != null) {
                 cameraSource.stop();
-                PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Camera is stopped");
+                PossumCore.addLogEntry(context(), "Camera is stopped");
             }
         }
     }
@@ -184,11 +167,13 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     @Override
     public void faceFound(Face face, Frame frame) {
         if (face == null) {
-            PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Face is null from detector");
+            PossumCore.addLogEntry(context(), "Face is null from detector");
             return;
         }
-        if (isProcessingFace) return;
-        isProcessingFace = true;
+        if (now() - lastFaceProcessed < MINIMUM_FACE_INTERVAL) {
+            return;
+        }
+        lastFaceProcessed = now();
         PointF leftEye = null;
         PointF rightEye = null;
         PointF mouth = null;
@@ -228,7 +213,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             RectF faceFrame = new RectF(centroid.x - diffX, centroid.y - diffX, centroid.x + diffX, centroid.y + diffX);
             if (faceFrame.left < 0 || faceFrame.top < 0) {
                 // Unable to get a frame around the necessary area
-                isProcessingFace = false;
                 return;
             }
             Bitmap fixedImage = Bitmap.createBitmap(imageProcessed, (int) faceFrame.left, (int) faceFrame.top, (int) faceFrame.width(), (int) faceFrame.height());
@@ -238,7 +222,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
 
             Bitmap alignedFace = alignFace(fixedImage, movedLeftEye, movedRightEye, movedMouth);
             if (alignedFace == null) {
-                isProcessingFace = false;
                 return;
             }
 //            didFindFace = true;
@@ -250,7 +233,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             try {
                 streamData(tensorFlowInterface.getWeights(scaledOutput, nowTimestamp));
             } catch (Exception e) {
-                PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Failed to stream tensorflow:"+e.getLocalizedMessage());
+                PossumCore.addLogEntry(context(), "Failed to stream tensorflow:"+e.getLocalizedMessage());
             }
             // LBP array
             try {
@@ -260,12 +243,11 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
                 lbpArray.add(landMarks(face));
                 streamData(lbpArray, lbpDataSet);
             } catch (Exception e) {
-                PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Failed to handle LBP:"+e.getLocalizedMessage());
+                PossumCore.addLogEntry(context(), "Failed to handle LBP:"+e.getLocalizedMessage());
             }
-            PossumCore.addLogEntry(context(), System.currentTimeMillis(),"Face determined and processed");
-            Log.i(tag, "AP: Processed face");
+            PossumCore.addLogEntry(context(), "Face determined and processed");
+//            Log.i(tag, "AP: Processed face");
         }
-        isProcessingFace = false;
     }
 
     int[] mainLBP(Bitmap image) {
@@ -609,7 +591,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     @Override
     public void cleanUp() {
         super.cleanUp();
-        PossumCore.addLogEntry(context(), System.currentTimeMillis(), "Terminated/Cleaned camera");
+        PossumCore.addLogEntry(context(), "Terminated/Cleaned camera");
         if (detector != null) {
             detector.destroy();
             detector = null;
@@ -620,8 +602,25 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         }
     }
 
-    private static Bitmap alignFace(@NonNull Bitmap face, PointF leftEye, PointF rightEye, PointF mouth) {
-        MatOfPoint2f src = new MatOfPoint2f();
+    private Bitmap alignFace(@NonNull Bitmap face, PointF leftEye, PointF rightEye, PointF mouth) {
+        float[] sourcePoints = {leftEye.x,rightEye.x,mouth.x,leftEye.y,rightEye.y,mouth.y,1,1,1};
+
+        double dimX = face.getWidth();
+        double dimY = face.getHeight();
+
+        float[] destPoints = {(float) (dimX*0.70726717), (float) (dimX*0.27657071), (float) (dimX*0.50020397), (float) (dimY*0.1557629), (float) (dimY*0.16412275), (float) (dimY*0.75058442),1,1,1};
+        float[] sourcePointsInverse = calculateInverseMatrix (sourcePoints);
+        float[] transformation = calculateTransformation(destPoints,sourcePointsInverse);
+
+        RectF rect = new RectF(0, 0, face.getWidth(), face.getHeight());
+        RectF dst = new RectF();
+
+        Matrix matrixNew = new Matrix();
+        matrixNew.setValues(transformation);
+        matrixNew.mapRect(dst,rect);
+        Bitmap scaled = Bitmap.createBitmap(face,0,0,face.getWidth(),face.getHeight(),matrixNew,true);
+        return Bitmap.createBitmap(scaled,(int)-(dst.left),(int)-(dst.top),face.getWidth(),face.getHeight());
+        /*MatOfPoint2f src = new MatOfPoint2f();
         MatOfPoint2f dest = new MatOfPoint2f();
 
         // our reference points (source)
@@ -648,7 +647,51 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         Bitmap alignedFace = Bitmap.createBitmap(face.getWidth(), face.getHeight(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(alignedImage, alignedFace);
 
-        return alignedFace;
+        return alignedFace;*/
+    }
+
+    private float[] calculateInverseMatrix(float[] v) {
+        float determinantM = (v[0]*v[4]*v[8])+(v[3]*v[7]*v[2])+(v[1]*v[5]*v[6])-(v[2]*v[4]*v[6])-(v[1]*v[3]*v[8])-(v[5]*v[7]*v[0]);
+
+        float[] adjM = new float[9];
+        adjM[0] = (v[4]*v[8])-(v[5]*v[7]);
+        adjM[1] = (v[2]*v[7])-(v[1]*v[8]);
+        adjM[2] = (v[1]*v[5])-(v[4]*v[2]);
+        adjM[3] = (v[6]*v[5])-(v[3]*v[8]);
+        adjM[4] = (v[0]*v[8])-(v[2]*v[6]);
+        adjM[5] = (v[2]*v[3])-(v[0]*v[5]);
+        adjM[6] = (v[3]*v[7])-(v[4]*v[6]);
+        adjM[7] = (v[6]*v[1])-(v[0]*v[7]);
+        adjM[8] = (v[0]*v[4])-(v[3]*v[1]);
+
+
+        float[] mInverse = new float[9];
+        mInverse[0] = adjM[0]/determinantM;
+        mInverse[1] = adjM[1]/determinantM;
+        mInverse[2] = adjM[2]/determinantM;
+        mInverse[3] = adjM[3]/determinantM;
+        mInverse[4] = adjM[4]/determinantM;
+        mInverse[5] = adjM[5]/determinantM;
+        mInverse[6] = adjM[6]/determinantM;
+        mInverse[7] = adjM[7]/determinantM;
+        mInverse[8] = adjM[8]/determinantM;
+
+        return mInverse;
+    }
+
+    private float[] calculateTransformation(float[] destPoints, float[] sourcePointsInverse) {
+        float[] tranformation = new float[9];
+        tranformation[0] = (destPoints[0]*sourcePointsInverse[0]) + (destPoints[1]*sourcePointsInverse[3])+ (destPoints[2]*sourcePointsInverse[6]);
+        tranformation[1] = (destPoints[0]*sourcePointsInverse[1]) + (destPoints[1]*sourcePointsInverse[4])+ (destPoints[2]*sourcePointsInverse[7]);
+        tranformation[2] = (destPoints[0]*sourcePointsInverse[2]) + (destPoints[1]*sourcePointsInverse[5])+ (destPoints[2]*sourcePointsInverse[8]);
+        tranformation[3] = (destPoints[3]*sourcePointsInverse[0]) + (destPoints[4]*sourcePointsInverse[3])+ (destPoints[5]*sourcePointsInverse[6]);
+        tranformation[4] = (destPoints[3]*sourcePointsInverse[1]) + (destPoints[4]*sourcePointsInverse[4])+ (destPoints[5]*sourcePointsInverse[7]);
+        tranformation[5] = (destPoints[3]*sourcePointsInverse[2]) + (destPoints[4]*sourcePointsInverse[5])+ (destPoints[5]*sourcePointsInverse[8]);
+        tranformation[6] = 0;
+        tranformation[7] = 0;
+        tranformation[8] = 1;
+
+        return tranformation;
     }
 
     @Override
