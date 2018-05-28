@@ -8,7 +8,6 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatDialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,7 +38,7 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
     }
 
     @Override
-    public void onViewCreated(View view, Bundle bundle) {
+    public void onViewCreated(@NonNull View view, Bundle bundle) {
         super.onViewCreated(view, bundle);
         Button cancelButton = view.findViewById(R.id.cancel);
         cancelButton.setOnClickListener(v -> dismiss());
@@ -109,13 +108,14 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
             preferences.registerOnSharedPreferenceChangeListener(this);
         }
 
+        @NonNull
         @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             return new ViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.graph_row, parent, false));
         }
 
         @Override
-        public void onBindViewHolder(final ViewHolder holder, int position) {
+        public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
             holder.bind(objects.get(position));
             holder.itemView.setOnClickListener(v -> {
                 GraphObject obj = objects.get(holder.getAdapterPosition());
@@ -130,12 +130,12 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
                 missingTextField.setVisibility(View.VISIBLE);
                 return;
             }
-            JsonObject storedPrefs = GraphUtil.graphVisibility(preferences);
+            JsonObject storedData = GraphUtil.graphVisibility(preferences);
             List<GraphObject> oldObjects = new ArrayList<>(objects);
             List<GraphObject> newObjects = new ArrayList<>();
-            for (Map.Entry<String, JsonElement> entry : storedPrefs.entrySet()) {
+            for (Map.Entry<String, JsonElement> entry : storedData.entrySet()) {
                 String key = entry.getKey();
-                boolean visible = storedPrefs.get(key).getAsBoolean();
+                boolean visible = storedData.get(key).getAsBoolean();
                 newObjects.add(new GraphObject(key, visible));
             }
             // in old, not in new -> delete
@@ -173,6 +173,9 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
             for (GraphObject obj : objects) {
                 saveObject.addProperty(obj.name, obj.isShown);
             }
+            // TODO: Fix issue with saving sometimes does not actually save - or is rewritten..
+            // Most likely issue - it receives while saving or something similar and rewrites the old. Check the
+            // updateSharedPreferences function in MainActivity - only other place where it can store to preferences.
 //            Log.i(tag, "APP: Saving object:"+saveObject);
             preferences.edit().putString(AppConstants.STORED_GRAPH_DISPLAY, saveObject.toString()).apply();
         }

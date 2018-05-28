@@ -23,6 +23,7 @@ import com.telenor.possumauth.example.dialogs.GraphSelectionDialog;
 import com.telenor.possumauth.example.fragments.MainFragment;
 import com.telenor.possumauth.example.fragments.TrustFragment;
 import com.telenor.possumauth.interfaces.IAuthCompleted;
+import com.telenor.possumcore.PossumCore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,6 +74,21 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
                 JsonArray arr = entry.getValue().getAsJsonArray();
                 for (JsonElement el : arr) {
                     JsonObject graphObj = el.getAsJsonObject();
+
+                    // Logging training status
+                    if (!graphObj.get("status").isJsonNull()) {
+                        float status = graphObj.get("status").getAsFloat();
+                        if (status < 1) {
+                            String trainingMessage = String.format(Locale.US, "Training %s:%s-%f", detectorName, shortName, status);
+                            Log.i(tag, "APP: "+trainingMessage);
+                            PossumCore.addLogEntry(getApplicationContext(), trainingMessage);
+                        } else {
+                            Log.i(tag, "APP: Fully trained:"+shortName);
+                        }
+                    } else {
+                        Log.i(tag, "APP: Eek, wrong field:"+graphObj);
+                    }
+
                     String shortDataSetName = GraphUtil.shortHand(graphObj.get("name").getAsString());
                     String graphName = String.format(Locale.US, "%s:%s", shortName, shortDataSetName);
                     ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).detectorValues(graphName, graphPosition, graphObj.get("score").getAsFloat(), graphObj.get("status").getAsFloat());
@@ -96,8 +112,9 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
         JsonObject sensorsObject = object.getAsJsonObject("sensors");
         JsonObject oldStoredData = GraphUtil.graphVisibility(preferences);
         List<String> oldGraphs = new ArrayList<>();
-        for (Map.Entry<String, JsonElement> entry : oldStoredData.entrySet())
+        for (Map.Entry<String, JsonElement> entry : oldStoredData.entrySet()) {
             oldGraphs.add(entry.getKey());
+        }
         List<String> newGraphs = new ArrayList<>();
         for (String sensorName : GraphUtil.sensorNames(sensorsObject)) {
             String shortSensor = GraphUtil.shortHand(sensorName);
@@ -116,12 +133,21 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
         adds.removeAll(oldGraphs);
         List<String> deletes = new ArrayList<>(oldGraphs);
         deletes.removeAll(newGraphs);
-        if (adds.size() > 0 || deletes.size() > 0) {
-            JsonObject obj = new JsonObject();
-            for (String graphName : newGraphs) {
-                obj.addProperty(graphName, false);
+        boolean isChanged = false;
+        if (adds.size() > 0) {
+            for (String graphName : adds) {
+                oldStoredData.addProperty(graphName, true);
             }
-            preferences.edit().putString(AppConstants.STORED_GRAPH_DISPLAY, obj.toString()).apply();
+            isChanged = true;
+        }
+        if (deletes.size() > 0) {
+            for (String graphName : deletes) {
+                oldStoredData.remove(graphName);
+            }
+            isChanged = true;
+        }
+        if (isChanged) {
+            preferences.edit().putString(AppConstants.STORED_GRAPH_DISPLAY, oldStoredData.toString()).apply();
         }
     }
 

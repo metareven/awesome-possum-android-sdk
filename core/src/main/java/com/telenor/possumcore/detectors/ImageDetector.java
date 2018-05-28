@@ -53,7 +53,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     private long lastFaceProcessed;
     private JsonParser parser;
     private Gson gson;
-//    private boolean didFindFace;
     private static final String lbpDataSet = "image_lbp";
 
     public ImageDetector(@NonNull Context context, @NonNull String modelName) {
@@ -169,9 +168,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             PossumCore.addLogEntry(context(), "Face is null from detector");
             return;
         }
-        if (now() - lastFaceProcessed < MINIMUM_FACE_INTERVAL) {
-            return;
-        }
+        if (now() - lastFaceProcessed < MINIMUM_FACE_INTERVAL) return;
         lastFaceProcessed = now();
         PointF leftEye = null;
         PointF rightEye = null;
@@ -619,34 +616,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         matrixNew.mapRect(dst,rect);
         Bitmap scaled = Bitmap.createBitmap(face,0,0,face.getWidth(),face.getHeight(),matrixNew,true);
         return Bitmap.createBitmap(scaled,(int)-(dst.left),(int)-(dst.top),face.getWidth(),face.getHeight());
-        /*MatOfPoint2f src = new MatOfPoint2f();
-        MatOfPoint2f dest = new MatOfPoint2f();
-
-        // our reference points (source)
-        src.fromArray(new Point(leftEye.x, leftEye.y),
-                new Point(rightEye.x, rightEye.y),
-                new Point(mouth.x, mouth.y));
-
-        double dimX = face.getWidth();
-        double dimY = face.getHeight();
-        // http://openface-api.readthedocs.io/en/latest/openface.html
-        // Alex: calculated from python script where inner eyes are interpolated from four eye points (also norm min/max)
-        dest.fromArray(new Point(dimX * 0.70726717, dimY * 0.1557629),
-                new Point(dimX * 0.27657071, dimY * 0.16412275),
-                new Point(dimX * 0.50020397, dimY * 0.75058442));
-
-        Mat matrixTransformation = getAffineTransform(src, dest);
-        Mat orgImage = new Mat();
-        Mat alignedImage = new Mat();
-
-        Utils.bitmapToMat(face, orgImage);
-
-        warpAffine(orgImage, alignedImage, matrixTransformation, orgImage.size());
-
-        Bitmap alignedFace = Bitmap.createBitmap(face.getWidth(), face.getHeight(), Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(alignedImage, alignedFace);
-
-        return alignedFace;*/
     }
 
     private float[] calculateInverseMatrix(float[] v) {

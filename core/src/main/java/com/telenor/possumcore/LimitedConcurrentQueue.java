@@ -8,7 +8,6 @@ import java.util.LinkedList;
  */
 public class LimitedConcurrentQueue<E> extends LinkedList<E> {
     private int limit;
-    private final Object blocker = new Object();
 
     /**
      * Constructor defining the capacity of the queue
@@ -22,7 +21,7 @@ public class LimitedConcurrentQueue<E> extends LinkedList<E> {
 
     @Override
     public boolean add(E o) {
-        synchronized (blocker) {
+        synchronized (this) {
             super.add(o);
             while (size() > limit) { super.remove(0); }
             return true;
