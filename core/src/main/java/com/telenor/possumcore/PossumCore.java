@@ -264,7 +264,7 @@ public abstract class PossumCore implements IDetectorChange {
      *
      * @return a list of used dangerous permissions
      */
-    protected static List<String> dangerousPermissions() {
+    private static List<String> dangerousPermissions() {
         List<String> dangerousPermissions = new ArrayList<>();
         dangerousPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
         dangerousPermissions.add(Manifest.permission.CAMERA);
@@ -321,8 +321,7 @@ public abstract class PossumCore implements IDetectorChange {
      * Stops any actual listening. Only fired if it is actually listening
      */
     public void stopListening() {
-        long timer = System.currentTimeMillis();
-        if (status.get() == CoreStatus.Running || status.get() == CoreStatus.Processing) {
+        if (status.get() != CoreStatus.Idle) {
             for (AbstractDetector detector : detectors)
                 detector.terminate();
             status.set(CoreStatus.Idle);

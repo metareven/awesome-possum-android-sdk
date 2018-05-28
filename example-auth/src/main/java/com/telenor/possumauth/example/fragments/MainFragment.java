@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -38,7 +39,7 @@ public class MainFragment extends TrustFragment {
     private Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
         return inflater.inflate(R.layout.fragment_main, parent, false);
     }
 
@@ -81,6 +82,8 @@ public class MainFragment extends TrustFragment {
                 }
             }
         };
+        if (getActivity() == null) throw new IllegalStateException("Activity is null");
+        if (getContext() == null) throw new IllegalStateException("Context is null");
         possumAuth = ((MainActivity) getActivity()).possumAuth();
         status = view.findViewById(R.id.status);
         //iconWheel = view.findViewById(R.id.iconWheel);
@@ -157,6 +160,7 @@ public class MainFragment extends TrustFragment {
     public void onResume() {
         super.onResume();
         if (!isRegistered) {
+            if (getContext() == null) throw new IllegalStateException("Context is null on resume");
             getContext().getApplicationContext().registerReceiver(receiver, new IntentFilter("PossumMessage"));
             isRegistered = true;
         }
@@ -169,6 +173,7 @@ public class MainFragment extends TrustFragment {
     public void onPause() {
         super.onPause();
         if (isRegistered) {
+            if (getContext() == null) throw new IllegalStateException("Context is null on pause");
             getContext().getApplicationContext().unregisterReceiver(receiver);
             isRegistered = false;
         }
@@ -176,6 +181,7 @@ public class MainFragment extends TrustFragment {
     }
 
     private String myId() {
+        if (getActivity() == null) throw new IllegalStateException("Activity is null on myId");
         return ((MainActivity) getActivity()).myId();
     }
 

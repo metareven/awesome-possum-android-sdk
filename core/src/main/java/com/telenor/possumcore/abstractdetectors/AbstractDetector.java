@@ -53,7 +53,7 @@ public abstract class AbstractDetector implements Runnable {
      * @return a list of JsonArrays. Which type of list is up to the implementation.
      * Default is an ArrayList. If necessary, use concurrent lists.
      */
-    protected LimitedConcurrentQueue<JsonArray> createInternalList(String dataSet) {
+    private LimitedConcurrentQueue<JsonArray> createInternalList(String dataSet) {
         return new LimitedConcurrentQueue<>(queueLimit(dataSet));
     }
 

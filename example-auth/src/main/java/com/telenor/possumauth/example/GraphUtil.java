@@ -70,7 +70,7 @@ public class GraphUtil {
     }
 
     public static JsonObject graphVisibility(SharedPreferences preferences) {
-        JsonElement el = parser().parse(preferences.getString(AppConstants.STORED_GRAPH_DISPLAY, "{}"));
+        JsonElement el = parser.parse(preferences.getString(AppConstants.STORED_GRAPH_DISPLAY, "{}"));
         if (el.isJsonArray()) {
             return new JsonObject();
         } else {
@@ -88,10 +88,6 @@ public class GraphUtil {
             graphNames.add(entry.getKey());
         }
         return graphNames;
-    }
-
-    public static JsonParser parser() {
-        return parser;
     }
 
     public static void updateVisibility(LineChart lineChart, String graphName, boolean visible) {

@@ -33,7 +33,7 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
     private static final String tag = GraphSelectionDialog.class.getName();
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
         return inflater.inflate(R.layout.dialog_graph_selection, parent, false);
     }
 
@@ -47,11 +47,13 @@ public class GraphSelectionDialog extends AppCompatDialogFragment {
 
         okButton.setOnClickListener(v -> {
             myAdapter.saveCurrent();
+            if (getContext() == null) throw new IllegalStateException("Context is null in ok button");
             getContext().sendBroadcast(new Intent(AppConstants.UPDATE_GRAPHS));
             dismiss();
         });
         recyclerView = view.findViewById(R.id.recyclerView);
-        myAdapter = new GraphAdapter(getActivity().getSharedPreferences(AppConstants.SHARED_PREFERENCES, Context.MODE_PRIVATE));
+        if (getContext() == null) throw new IllegalStateException("Context is null in dialog");
+        myAdapter = new GraphAdapter(getContext().getSharedPreferences(AppConstants.SHARED_PREFERENCES, Context.MODE_PRIVATE));
         recyclerView.setAdapter(myAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
     }

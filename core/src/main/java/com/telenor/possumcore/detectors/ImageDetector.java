@@ -619,7 +619,12 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     }
 
     private float[] calculateInverseMatrix(float[] v) {
-        float determinantM = (v[0]*v[4]*v[8])+(v[3]*v[7]*v[2])+(v[1]*v[5]*v[6])-(v[2]*v[4]*v[6])-(v[1]*v[3]*v[8])-(v[5]*v[7]*v[0]);
+        float determinantM = (v[0]*v[4]*v[8])+
+                             (v[3]*v[7]*v[2])+
+                             (v[1]*v[5]*v[6])-
+                             (v[2]*v[4]*v[6])-
+                             (v[1]*v[3]*v[8])-
+                             (v[5]*v[7]*v[0]);
 
         float[] adjM = new float[9];
         adjM[0] = (v[4]*v[8])-(v[5]*v[7]);

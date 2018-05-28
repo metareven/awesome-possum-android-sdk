@@ -8,6 +8,7 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,13 +38,14 @@ public class AllDetectorsChartFragment extends TrustFragment {
     };
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
         return inflater.inflate(R.layout.fragment_sub_all_sensors_chart, parent, false);
     }
 
     @Override
     public void onViewCreated(View view, Bundle bundle) {
         super.onViewCreated(view, bundle);
+        if (getContext() == null) throw new IllegalStateException("Context is null in detector fragment");
         getContext().registerReceiver(receiver, new IntentFilter(AppConstants.UPDATE_GRAPHS));
         lineChart = view.findViewById(R.id.lineChart);
         lineChart.setTouchEnabled(false);
@@ -92,6 +94,7 @@ public class AllDetectorsChartFragment extends TrustFragment {
 
     @Override
     public void detectorValues(String graphName, int graphPos, float score, float training) {
+        if (getActivity() == null) throw new IllegalStateException("Activity is null in detectorValues");
         JsonObject graphs = ((MainActivity)getActivity()).graphVisibility();
         JsonElement el = graphs.get(graphName);
         boolean visible = !el.isJsonNull() && el.getAsBoolean();
@@ -106,6 +109,7 @@ public class AllDetectorsChartFragment extends TrustFragment {
     private void changeGraphs() {
         handler.post(() -> {
             if (lineChart.getLineData() == null) return;
+            if (getActivity() == null) throw new IllegalStateException("Activity is null in changeGraphs");
             for (Map.Entry<String, JsonElement> entry : ((MainActivity)getActivity()).graphVisibility().entrySet()) {
                 String graphName = entry.getKey();
                 ILineDataSet dataSet = lineChart.getLineData().getDataSetByLabel(graphName, true);
@@ -119,6 +123,7 @@ public class AllDetectorsChartFragment extends TrustFragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (getContext() == null) throw new IllegalStateException("Context is null in onDestroy");
         getContext().unregisterReceiver(receiver);
     }
 
