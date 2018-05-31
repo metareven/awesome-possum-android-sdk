@@ -29,7 +29,7 @@ public abstract class AbstractDetector implements Runnable {
     private Context context;
     private String uniqueUserId;
     private AtomicBoolean isRunning = new AtomicBoolean(false);
-    protected Map<String, LimitedConcurrentQueue<JsonArray>> dataStored = new HashMap<>();
+    protected final Map<String, LimitedConcurrentQueue<JsonArray>> dataStored = new HashMap<>();
     protected static final String tag = AbstractDetector.class.getName();
     protected static final String defaultSet = "default";
     private IDetectorChange changeListener;
@@ -281,11 +281,13 @@ public abstract class AbstractDetector implements Runnable {
      */
     public synchronized JsonArray jsonData(String dataSet) {
         JsonArray outputArr = new JsonArray();
-        LimitedConcurrentQueue<JsonArray> data = dataStored.get(dataSet);
-        for (JsonArray arr : data) {
-            outputArr.add(arr);
+        synchronized (dataStored) {
+            LimitedConcurrentQueue<JsonArray> data = dataStored.get(dataSet);
+            for (JsonArray arr : data) {
+                outputArr.add(arr);
+            }
+            dataStored.put(dataSet, new LimitedConcurrentQueue<>(queueLimit(dataSet))); // Clearing the dataSet
         }
-        dataStored.put(dataSet, new LimitedConcurrentQueue<>(queueLimit(dataSet))); // Clearing the dataSet
         return outputArr;
     }
 

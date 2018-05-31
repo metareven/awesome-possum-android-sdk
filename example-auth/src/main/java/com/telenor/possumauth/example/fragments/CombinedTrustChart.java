@@ -1,116 +1,40 @@
 package com.telenor.possumauth.example.fragments;
 
-import android.graphics.Typeface;
 import android.os.Bundle;
-import android.util.Log;
+import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.Description;
-import com.github.mikephil.charting.components.Legend;
-import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
-import com.github.mikephil.charting.data.LineDataSet;
 import com.telenor.possumauth.example.GraphUtil;
 import com.telenor.possumauth.example.R;
 
 public class CombinedTrustChart extends TrustFragment {
     private LineChart lineChart;
 
+    @SuppressWarnings("unused")
     private static final String tag = CombinedTrustChart.class.getName();
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
         return inflater.inflate(R.layout.fragment_sub_combined, parent, false);
     }
 
     @Override
-    public void onViewCreated(View view, Bundle bundle) {
+    public void onViewCreated(@NonNull View view, Bundle bundle) {
         super.onViewCreated(view, bundle);
         lineChart = view.findViewById(R.id.lineChart);
-        lineChart.setTouchEnabled(false);
-        lineChart.setScaleEnabled(false);
-        lineChart.setPinchZoom(false);
-        lineChart.setDoubleTapToZoomEnabled(false);
-        lineChart.setDrawBorders(false);
-        Legend l = lineChart.getLegend();
-        l.setEnabled(true);
-        l.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
-        l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.RIGHT);
-        l.setOrientation(Legend.LegendOrientation.VERTICAL);
-        l.setDrawInside(true);
-        l.setTypeface(Typeface.DEFAULT);
-        l.setForm(Legend.LegendForm.CIRCLE);
-
-        Description description = new Description();
-        description.setText("Trustscore pr auth");
-        lineChart.setDescription(description);
-
-        lineChart.setDrawGridBackground(false);
-        lineChart.getXAxis().setDrawGridLines(false);
-        lineChart.getXAxis().setDrawLabels(false);
-        lineChart.getAxisLeft().setTextSize(15f);
-        lineChart.getXAxis().setDrawAxisLine(true);
-        lineChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
-        lineChart.getAxisLeft().setAxisMaximum(1.1f);
-        lineChart.getAxisLeft().setAxisMinimum(0);
-        lineChart.getAxisLeft().setDrawLabels(true);
-        lineChart.getAxisLeft().setDrawGridLines(false);
-        lineChart.getAxisLeft().setDrawAxisLine(true);
-        lineChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
-        lineChart.getAxisRight().setDrawLabels(false);
-        lineChart.getAxisRight().setDrawGridLines(false);
-        lineChart.getAxisRight().setDrawAxisLine(false);
-
-        // limit the number of visible entries
-        //lineChart.setVisibleXRangeMaximum(20);
-        lineChart.setMaxVisibleValueCount(20);
-
-        lineChart.setNoDataText("No trustScores yet");
+        GraphUtil.configureChart(lineChart, "Trustscore pr auth", "No trustScores yet");
     }
 
     @Override
-    public void newTrustScore(String graphName, int graphPos, float newScore) {
-        addEntry(graphPos, newScore, graphName);
-    }
-
-    @Override
-    public void detectorValues(String graphName, int graphPos, float score, float training) {
-
+    public void graphUpdate(String graphName, int graphPos, float score, float trained) {
+        GraphUtil.addEntry(lineChart, true, graphName, graphPos, score);
     }
 
     @Override
     public void updateVisibility(String graphName, boolean visible) {
 
-    }
-
-    private void addEntry(int graphPos, float combinedTrustScore, String graphName) {
-        if (!graphName.equals("default")) return;
-        if (lineChart == null) {
-            Log.i(tag, "AP: Crisis, got a null lineChart in allSensors");
-            return;
-        }
-
-        LineData data = lineChart.getData();
-        if (data == null) {
-            data = new LineData();
-            lineChart.setData(data);
-        }
-        LineDataSet set = (LineDataSet)data.getDataSetByIndex(0);
-        if (set == null) {
-            set = GraphUtil.lineDataSet(graphName);
-            data.addDataSet(set);
-        }
-        set.addEntry(new Entry(graphPos, combinedTrustScore));
-        data.notifyDataChanged();
-
-        // move to the latest entry
-        lineChart.moveViewToX(graphPos);
-
-        // let the chart know it's data has changed
-        lineChart.notifyDataSetChanged();
     }
 }

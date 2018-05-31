@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
     private PossumAuth possumAuth;
     private JsonParser parser;
     private int graphPosition;
-    private JsonObject graphVisibility;
+//    private JsonObject graphVisibility;
 
     @Override
     public void onCreate(Bundle bundle) {
@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
         graphPosition = 0;
         preferences = getSharedPreferences(AppConstants.SHARED_PREFERENCES, MODE_PRIVATE);
         preferences.registerOnSharedPreferenceChangeListener(this);
-        graphVisibility = GraphUtil.graphVisibility(preferences);
+//        graphVisibility = GraphUtil.graphVisibility(preferences);
         String userId = myId();
         possumAuth = new PossumAuth(getApplicationContext(), userId, getString(R.string.authentication_url), getString(R.string.apiKey));
         possumAuth.addAuthListener(this);
@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
                 JsonObject obj = el.getAsJsonObject();
                 String graphName = obj.get("name").getAsString();
                 float score = obj.get("score").getAsFloat();
-                ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).newTrustScore(graphName, graphPosition, score);
+                ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).graphUpdate(graphName, graphPosition, score, -1);
             }
             Log.i(tag, "AP: Msg:" + message);
             for (Map.Entry<String, JsonElement> entry : sensors.entrySet()) {
@@ -74,12 +74,12 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
                 JsonArray arr = entry.getValue().getAsJsonArray();
                 for (JsonElement el : arr) {
                     JsonObject graphObj = el.getAsJsonObject();
-
+                    String shortDataSet = GraphUtil.shortHand(graphObj.get("name").getAsString());
                     // Logging training status
                     if (!graphObj.get("status").isJsonNull()) {
                         float status = graphObj.get("status").getAsFloat();
                         if (status < 1) {
-                            String trainingMessage = String.format(Locale.US, "Training %s:%s-%f", detectorName, shortName, status);
+                            String trainingMessage = String.format(Locale.US, "Training %s:%s-%f", shortName, shortDataSet,status);
                             Log.i(tag, "APP: "+trainingMessage);
                             PossumCore.addLogEntry(getApplicationContext(), trainingMessage);
                         } else {
@@ -91,14 +91,13 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
 
                     String shortDataSetName = GraphUtil.shortHand(graphObj.get("name").getAsString());
                     String graphName = String.format(Locale.US, "%s:%s", shortName, shortDataSetName);
-                    ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).detectorValues(graphName, graphPosition, graphObj.get("score").getAsFloat(), graphObj.get("status").getAsFloat());
+                    ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).graphUpdate(graphName, graphPosition, graphObj.get("score").getAsFloat(), graphObj.get("status").getAsFloat());
                 }
             }
             Send.message(getApplicationContext(), Messaging.AUTH_RETURNED);
         } else {
             Log.i(tag, "AP: Error when auth:", e);
             // Posts error message
-            ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).newTrustScore(null, graphPosition,-1);
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle(e.getMessage());
             builder.setMessage(String.format(Locale.US,"Msg:%s\nStack:%s", responseMessage, e.fillInStackTrace()));
@@ -149,10 +148,6 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
         if (isChanged) {
             preferences.edit().putString(AppConstants.STORED_GRAPH_DISPLAY, oldStoredData.toString()).apply();
         }
-    }
-
-    public JsonObject graphVisibility() {
-        return graphVisibility;
     }
 
     @Override
@@ -256,8 +251,7 @@ public class MainActivity extends AppCompatActivity implements IAuthCompleted, S
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        graphVisibility = GraphUtil.graphVisibility(sharedPreferences);
-        for (Map.Entry<String, JsonElement> entry : graphVisibility.entrySet()) {
+        for (Map.Entry<String, JsonElement> entry : GraphUtil.graphVisibility(sharedPreferences).entrySet()) {
             String graph = entry.getKey();
             boolean visible = entry.getValue().getAsBoolean();
             ((TrustFragment) getSupportFragmentManager().getFragments().get(0)).updateVisibility(graph, visible);

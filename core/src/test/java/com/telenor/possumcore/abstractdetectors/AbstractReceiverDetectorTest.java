@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.support.annotation.NonNull;
 
 import com.telenor.possumcore.interfaces.IDetectorChange;
 
@@ -50,6 +51,11 @@ public class AbstractReceiverDetectorTest {
             }
 
             @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
+            }
+
+            @Override
             public int detectorType() {
                 return 999;
             }
@@ -88,6 +94,11 @@ public class AbstractReceiverDetectorTest {
             }
 
             @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
+            }
+
+            @Override
             public int detectorType() {
                 return 999;
             }
@@ -111,6 +122,11 @@ public class AbstractReceiverDetectorTest {
             @Override
             protected void onReceiveData(Intent intent) {
                 counter++;
+            }
+
+            @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
             }
 
             @Override
@@ -157,6 +173,11 @@ public class AbstractReceiverDetectorTest {
             @Override
             protected void onReceiveData(Intent intent) {
 
+            }
+
+            @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
             }
 
             @Override
@@ -211,6 +232,11 @@ public class AbstractReceiverDetectorTest {
             @Override
             protected void onReceiveData(Intent intent) {
 
+            }
+
+            @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
             }
 
             @Override

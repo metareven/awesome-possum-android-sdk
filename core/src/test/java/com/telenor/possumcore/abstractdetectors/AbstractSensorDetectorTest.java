@@ -6,6 +6,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
+import android.support.annotation.NonNull;
 
 import com.telenor.possumcore.BuildConfig;
 import com.telenor.possumcore.TestUtils;
@@ -64,6 +65,11 @@ public class AbstractSensorDetectorTest {
             }
 
             @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
+            }
+
+            @Override
             public int detectorType() {
                 return 999;
             }
@@ -100,6 +106,11 @@ public class AbstractSensorDetectorTest {
             }
 
             @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
+            }
+
+            @Override
             public int detectorType() {
                 return 999;
             }
@@ -119,6 +130,11 @@ public class AbstractSensorDetectorTest {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
 
+            }
+
+            @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
             }
 
             @Override
@@ -156,6 +172,11 @@ public class AbstractSensorDetectorTest {
             }
 
             @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
+            }
+
+            @Override
             public int detectorType() {
                 return 999;
             }
@@ -183,6 +204,11 @@ public class AbstractSensorDetectorTest {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
 
+            }
+
+            @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
             }
 
             @Override

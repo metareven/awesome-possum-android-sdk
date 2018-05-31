@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,15 +13,10 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.Description;
-import com.github.mikephil.charting.components.Legend;
-import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.telenor.possumauth.example.AppConstants;
 import com.telenor.possumauth.example.GraphUtil;
-import com.telenor.possumauth.example.MainActivity;
 import com.telenor.possumauth.example.R;
 
 import java.util.Map;
@@ -43,62 +37,18 @@ public class AllDetectorsChartFragment extends TrustFragment {
     }
 
     @Override
-    public void onViewCreated(View view, Bundle bundle) {
+    public void onViewCreated(@NonNull View view, Bundle bundle) {
         super.onViewCreated(view, bundle);
         if (getContext() == null) throw new IllegalStateException("Context is null in detector fragment");
         getContext().registerReceiver(receiver, new IntentFilter(AppConstants.UPDATE_GRAPHS));
         lineChart = view.findViewById(R.id.lineChart);
-        lineChart.setTouchEnabled(false);
-        lineChart.setScaleEnabled(false);
-        lineChart.setPinchZoom(false);
-        lineChart.setDoubleTapToZoomEnabled(false);
-        lineChart.setDrawBorders(false);
-        Legend l = lineChart.getLegend();
-        l.setEnabled(true);
-        l.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
-        l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.RIGHT);
-        l.setOrientation(Legend.LegendOrientation.VERTICAL);
-        l.setDrawInside(true);
-        l.setTypeface(Typeface.DEFAULT);
-        l.setForm(Legend.LegendForm.CIRCLE);
-        lineChart.setDrawGridBackground(false);
-        lineChart.getXAxis().setDrawGridLines(false);
-        lineChart.getXAxis().setDrawLabels(false);
-        lineChart.getAxisLeft().setTextSize(15f);
-        lineChart.getXAxis().setDrawAxisLine(true);
-        lineChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
-        Description description = new Description();
-        description.setText("All sensors");
-        lineChart.setDescription(description);
-        lineChart.getAxisLeft().setAxisMaximum(1.1f);
-        lineChart.getAxisLeft().setAxisMinimum(0);
-        lineChart.getAxisLeft().setDrawLabels(true);
-        lineChart.getAxisLeft().setDrawGridLines(false);
-        lineChart.getAxisLeft().setDrawAxisLine(true);
-        lineChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
-        lineChart.getAxisRight().setDrawLabels(false);
-        lineChart.getAxisRight().setDrawGridLines(false);
-        lineChart.getAxisRight().setDrawAxisLine(false);
-
-        // limit the number of visible entries
-        //lineChart.setVisibleXRangeMaximum(20);
-        lineChart.setMaxVisibleValueCount(20);
-
-        lineChart.setNoDataText("No data yet");
+        GraphUtil.configureChart(lineChart, "All sensors", "No data yet");
     }
 
     @Override
-    public void newTrustScore(String graphName, int graphPos, float newScore) {
-
-    }
-
-    @Override
-    public void detectorValues(String graphName, int graphPos, float score, float training) {
-        if (getActivity() == null) throw new IllegalStateException("Activity is null in detectorValues");
-        JsonObject graphs = ((MainActivity)getActivity()).graphVisibility();
-        JsonElement el = graphs.get(graphName);
-        boolean visible = !el.isJsonNull() && el.getAsBoolean();
-        GraphUtil.addEntry(lineChart, visible, graphName, graphPos, score);
+    public void graphUpdate(String graphName, int graphPos, float score, float trained) {
+        if (getContext() == null) throw new IllegalStateException("Context is null in graphUpdate");
+        GraphUtil.addEntry(lineChart, GraphUtil.graphVisibility(getContext().getSharedPreferences(AppConstants.SHARED_PREFERENCES, Context.MODE_PRIVATE), graphName), graphName, graphPos, score);
     }
 
     @Override
@@ -107,10 +57,10 @@ public class AllDetectorsChartFragment extends TrustFragment {
     }
 
     private void changeGraphs() {
+        if (lineChart.getLineData() == null) return;
+        if (getContext() == null) throw new IllegalStateException("Context is null in changeGraphs");
         handler.post(() -> {
-            if (lineChart.getLineData() == null) return;
-            if (getActivity() == null) throw new IllegalStateException("Activity is null in changeGraphs");
-            for (Map.Entry<String, JsonElement> entry : ((MainActivity)getActivity()).graphVisibility().entrySet()) {
+            for (Map.Entry<String, JsonElement> entry : GraphUtil.graphVisibility(getContext().getSharedPreferences(AppConstants.SHARED_PREFERENCES, Context.MODE_PRIVATE)).entrySet()) {
                 String graphName = entry.getKey();
                 ILineDataSet dataSet = lineChart.getLineData().getDataSetByLabel(graphName, true);
                 if (dataSet != null)

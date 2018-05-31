@@ -202,12 +202,7 @@ public class BluetoothDetectorTest {
     public void testBLEScanOnRunWithLongScanAvailable() throws Exception {
         when(mockedBluetoothAdapter.getBluetoothLeScanner()).thenReturn(mockedBluetoothLEScanner);
         when(mockedBluetoothAdapter.isEnabled()).thenReturn(true);
-        bluetoothDetector = new BluetoothDetector(mockedContext) {
-            @Override
-            protected boolean isLongScanDoable() {
-                return true;
-            }
-        };
+        bluetoothDetector = new BluetoothDetector(mockedContext);
         Field adapterField = BluetoothDetector.class.getDeclaredField("bluetoothAdapter");
         adapterField.setAccessible(true);
         adapterField.set(bluetoothDetector, mockedBluetoothAdapter);
@@ -223,12 +218,7 @@ public class BluetoothDetectorTest {
     public void testNormalScanOnRunWithLongScanAvailable() throws Exception {
         when(mockedBluetoothAdapter.isEnabled()).thenReturn(true);
         when(mockedBluetoothAdapter.isDiscovering()).thenReturn(false);
-        bluetoothDetector = new BluetoothDetector(mockedContext) {
-            @Override
-            protected boolean isLongScanDoable() {
-                return true;
-            }
-        };
+        bluetoothDetector = new BluetoothDetector(mockedContext);
         Field adapterField = BluetoothDetector.class.getDeclaredField("bluetoothAdapter");
         adapterField.setAccessible(true);
         adapterField.set(bluetoothDetector, mockedBluetoothAdapter);
@@ -244,12 +234,7 @@ public class BluetoothDetectorTest {
         when(mockedBluetoothAdapter.getBluetoothLeScanner()).thenReturn(null);
         when(mockedBluetoothAdapter.isEnabled()).thenReturn(true);
         when(mockedBluetoothAdapter.isDiscovering()).thenReturn(false);
-        bluetoothDetector = new BluetoothDetector(mockedContext) {
-            @Override
-            protected boolean isLongScanDoable() {
-                return true;
-            }
-        };
+        bluetoothDetector = new BluetoothDetector(mockedContext);
         Field adapterField = BluetoothDetector.class.getDeclaredField("bluetoothAdapter");
         adapterField.setAccessible(true);
         adapterField.set(bluetoothDetector, mockedBluetoothAdapter);

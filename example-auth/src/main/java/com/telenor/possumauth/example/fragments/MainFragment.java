@@ -44,7 +44,7 @@ public class MainFragment extends TrustFragment {
     }
 
     @Override
-    public void onViewCreated(View view, Bundle bundle) {
+    public void onViewCreated(@NonNull View view, Bundle bundle) {
         super.onViewCreated(view, bundle);
         receiver = new BroadcastReceiver() {
             @Override
@@ -127,27 +127,19 @@ public class MainFragment extends TrustFragment {
     }
 
     @Override
-    public void newTrustScore(String graphName, int graphPos, float newScore) {
+    public void graphUpdate(String graphName, int graphPos, float score, float trained) {
         if (startedAuth) {
-            if (newScore >= 0) {
-                if ("default".equals(graphName)) {
-                    handler.post(() -> trustButton.setTrustScore(newScore * 100, null));
+            if (trained == -1) { // Data showing trustscore
+                if (score >= 0) {
+                    handler.post(() -> trustButton.setTrustScore(score * 100, null));
+                } else {
+                    startedAuth = false;
+                    handler.post(() -> trustButton.setTrustScore(0, "Failed"));
                 }
-                adapter.myPages.get(0).newTrustScore(graphName, graphPos, newScore);
-                adapter.myPages.get(1).newTrustScore(graphName, graphPos, newScore);
-            } else {
-                startedAuth = false;
-                handler.post(() -> trustButton.setTrustScore(0, "Failed"));
+                adapter.myPages.get(1).graphUpdate(graphName, graphPos, score, trained);
+            } else { // Data showing detector values
+                adapter.myPages.get(0).graphUpdate(graphName, graphPos, score, trained);
             }
-        }
-    }
-
-    @Override
-    public void detectorValues(String graphName, int graphPos, float score, float training) {
-        if (startedAuth) {
-            //iconWheel.updateSensorTrainingStatus(PossumAuth.detectorTypeFromName(detectorName), training);
-            adapter.myPages.get(0).detectorValues(graphName, graphPos, score, training);
-            adapter.myPages.get(1).detectorValues(graphName, graphPos, score, training);
         }
     }
 

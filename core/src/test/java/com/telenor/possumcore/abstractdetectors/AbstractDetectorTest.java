@@ -1,5 +1,7 @@
 package com.telenor.possumcore.abstractdetectors;
 
+import android.support.annotation.NonNull;
+
 import com.google.gson.JsonArray;
 import com.telenor.possumcore.TestUtils;
 import com.telenor.possumcore.interfaces.IDetectorChange;
@@ -31,6 +33,11 @@ public class AbstractDetectorTest {
         TestUtils.initializeJodaTime();
         detectorChange = Mockito.mock(IDetectorChange.class);
         abstractDetector = new AbstractDetector(RuntimeEnvironment.application, detectorChange) {
+            @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
+            }
+
             @Override
             public int detectorType() {
                 return 999;
@@ -65,6 +72,11 @@ public class AbstractDetectorTest {
     public void testInvalidArgument() {
         try {
             abstractDetector = new AbstractDetector(null, null) {
+                @Override
+                public int queueLimit(@NonNull String key) {
+                    return 20;
+                }
+
                 @Override
                 public int detectorType() {
                     return 999;
@@ -110,11 +122,6 @@ public class AbstractDetectorTest {
     }
 
     @Test
-    public void testLongScanIsFalseByDefault() {
-        Assert.assertFalse(abstractDetector.isLongScanDoable());
-    }
-
-    @Test
     public void testNothingIsStoredWhenAttemptingToStoreOnInvalidDataSet() throws Exception {
         abstractDetector.streamData(new JsonArray(), "invalidSet");
         Field dataStoredField = AbstractDetector.class.getDeclaredField("dataStored");
@@ -140,6 +147,12 @@ public class AbstractDetectorTest {
             public int detectorType() {
                 return 999;
             }
+
+            @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
+            }
+
             @Override
             protected String requiredPermission() {
                 return "android.permission.ACCESS_FINE_LOCATION";
@@ -160,12 +173,23 @@ public class AbstractDetectorTest {
     }
 
     @Test
+    public void testQueueLimit() throws Exception {
+        // TODO: Implement test
+    }
+
+    @Test
     public void testPermittedReturnsTrueIfGranted() {
         abstractDetector = new AbstractDetector(RuntimeEnvironment.application, detectorChange) {
             @Override
             public int detectorType() {
                 return 999;
             }
+
+            @Override
+            public int queueLimit(@NonNull String key) {
+                return 20;
+            }
+
             @Override
             protected String requiredPermission() {
                 return "android.permission.ACCESS_FINE_LOCATION";
