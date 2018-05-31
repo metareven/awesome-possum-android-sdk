@@ -3,8 +3,8 @@ apply plugin: 'com.novoda.bintray-release'
 
 project.group = 'com.telenor'
 ext {
-    VERSION_CODE = 17
-    VERSION_NAME = '1.4.0'
+    VERSION_CODE = 19
+    VERSION_NAME = '1.4.2'
 }
 version = VERSION_NAME
 project.version = VERSION_NAME
@@ -74,7 +74,6 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.3.2'
     implementation 'com.amazonaws:aws-android-sdk-s3:2.3.6'
     testImplementation 'junit:junit:4.12'

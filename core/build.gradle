@@ -2,8 +2,8 @@ apply plugin: 'com.android.library'
 
 project.group = 'com.telenor'
 ext {
-    VERSION_CODE = 18
-    VERSION_NAME = '1.4.1'
+    VERSION_CODE = 19
+    VERSION_NAME = '1.4.2'
 }
 version = VERSION_NAME
 project.version = VERSION_NAME
@@ -25,16 +25,6 @@ android {
         }
     }
     testOptions.unitTests.includeAndroidResources true
-    /*externalNativeBuild {
-        cmake {
-            path "CMakeLists.txt"
-        }
-    }*/
-/*    sourceSets {
-        main {
-            jni.srcDirs = ["src/main/jniLibs"]
-        }
-    }*/
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -43,7 +33,6 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:27.1.1'
     api 'net.danlew:android.joda:2.9.9.1'
     api 'com.google.code.gson:gson:2.8.0'
     api 'com.google.android.gms:play-services-vision:15.0.2'

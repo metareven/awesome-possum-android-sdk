@@ -3,8 +3,8 @@ apply plugin: 'com.novoda.bintray-release'
 
 project.group = 'com.telenor'
 ext {
-    VERSION_CODE = 18
-    VERSION_NAME = '1.4.1'
+    VERSION_CODE = 19
+    VERSION_NAME = '1.4.2'
 }
 version = VERSION_NAME
 project.version = VERSION_NAME
@@ -73,7 +73,6 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:27.1.1'
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.robolectric:robolectric:3.6.1'
     testImplementation 'org.robolectric:shadows-support-v4:3.3.2'
